@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic"; // ⬅️ prevents prerendering
+
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
@@ -10,8 +12,8 @@ export default function CallbackPage() {
 
   useEffect(() => {
     async function handleCallback() {
-      // Pass full callback URL to Supabase
       const code = searchParams.get("code");
+
       if (!code) {
         router.push("/auth/login");
         return;
@@ -20,12 +22,11 @@ export default function CallbackPage() {
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
       if (error) {
-        console.error("Auth error:", error);
+        console.error("Callback error:", error);
         router.push("/auth/login");
         return;
       }
 
-      // Success → redirect user
       router.push("/dashboard");
     }
 
