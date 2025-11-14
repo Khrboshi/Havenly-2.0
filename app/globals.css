@@ -2,42 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Warm Gradient (Option B) */
-:root {
-  --primary-from: #ff8a64;
-  --primary-to: #ff5c8a;
-}
-
-/* Bottom navbar container */
-.nav-container {
-  @apply bg-white shadow-xl rounded-t-3xl px-6 py-3 flex justify-between items-center relative;
-}
-
-/* Navigation item */
-.nav-item {
-  @apply text-gray-500 flex flex-col items-center w-12 h-12 justify-center;
-}
-.nav-item:hover {
-  @apply text-rose-500;
-}
-
-/* Floating action button */
-.fab {
-  @apply absolute left-1/2 -translate-x-1/2 -top-6 
-         bg-gradient-to-br from-[var(--primary-from)] to-[var(--primary-to)]
-         w-16 h-16 rounded-full flex items-center justify-center shadow-lg;
-}
-
-/* Buttons */
 .btn-primary {
-  @apply bg-gradient-to-r from-[var(--primary-from)] to-[var(--primary-to)]
-         text-white font-medium px-4 py-3 rounded-full w-full shadow-md;
-}
-.btn-secondary {
-  @apply border border-rose-400 text-rose-500 px-4 py-3 rounded-full w-full;
+  @apply bg-primary text-white font-medium px-4 py-3 rounded-xl w-full 
+  text-center shadow-md active:scale-95 transition;
 }
 
-/* Text */
-h1, h2, h3 {
-  @apply text-slate-800;
+.btn-secondary {
+  @apply border border-primary text-primary font-medium px-4 py-3 rounded-xl 
+  w-full text-center hover:bg-primary hover:text-white active:scale-95 transition;
+}
+
+input {
+  @apply border rounded-xl px-4 py-3 w-full bg-white;
 }
