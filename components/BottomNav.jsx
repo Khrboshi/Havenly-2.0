@@ -2,43 +2,46 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  Home, 
-  PenLine, 
-  Smile, 
-  BarChart3, 
-  User 
+import {
+  Home,
+  BookOpen,
+  LineChart,
+  Smile,
+  User
 } from "lucide-react";
-
-const tabs = [
-  { href: "/dashboard", icon: Home, label: "Home" },
-  { href: "/reflect", icon: PenLine, label: "Reflect" },
-  { href: "/mood", icon: Smile, label: "Mood" },
-  { href: "/insights", icon: BarChart3, label: "Insights" },
-  { href: "/profile", icon: User, label: "Profile" },
-];
 
 export default function BottomNav() {
   const pathname = usePathname();
 
+  const tabs = [
+    { href: "/dashboard", label: "Home", icon: Home },
+    { href: "/reflect", label: "Reflect", icon: BookOpen },
+    { href: "/insights", label: "Insights", icon: LineChart },
+    { href: "/mood", label: "Mood", icon: Smile },
+    { href: "/profile", label: "Profile", icon: User }
+  ];
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-md h-16 flex justify-around items-center z-50 px-2">
-      {tabs.map((tab) => {
-        const active = pathname.startsWith(tab.href);
-        const Icon = tab.icon;
+    <nav className="fixed bottom-0 left-0 w-full bg-white border-t shadow-lg px-4 py-2 flex justify-between max-w-md mx-auto right-0 z-50">
+      {tabs.map(({ href, label, icon: Icon }) => {
+        const active = pathname === href;
 
         return (
           <Link
-            key={tab.href}
-            href={tab.href}
-            className="flex flex-col items-center text-xs"
+            key={href}
+            href={href}
+            className="flex flex-col items-center flex-1"
           >
             <Icon
               size={22}
-              className={active ? "text-primary" : "text-gray-400"}
+              className={active ? "text-primary" : "text-slate-400"}
             />
-            <span className={active ? "text-primary" : "text-gray-400"}>
-              {tab.label}
+            <span
+              className={`text-xs ${
+                active ? "text-primary font-medium" : "text-slate-400"
+              }`}
+            >
+              {label}
             </span>
           </Link>
         );
