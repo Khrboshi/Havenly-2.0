@@ -1,8 +1,20 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { supabase } from "../lib/supabase";
 
-export default function Home() {
+export default function HomePage() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    async function load() {
+      const { data } = await supabase.auth.getUser();
+      setUser(data.user || null);
+    }
+    load();
+  }, []);
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-6 py-10 text-center bg-gradient-to-b from-blue-50 to-white">
 
@@ -11,25 +23,31 @@ export default function Home() {
       </h1>
 
       <p className="text-slate-600 max-w-md mb-8">
-        A mobile-first, AI-guided reflection space.  
+        A mobile-first, AI-guided reflection space.
         Calm. Private. Cloud-synced.
       </p>
 
       <div className="flex flex-col gap-4 w-full max-w-sm">
-        <Link href="/reflect" className="btn-primary">
-          Start Reflecting
-        </Link>
-        <Link href="/progress" className="btn-secondary">
-          View Progress
-        </Link>
-        <Link href="/auth/login" className="text-slate-500 text-sm hover:text-primary">
-          Log in
-        </Link>
-        <Link href="/auth/signup" className="text-slate-500 text-sm hover:text-primary">
-          Create an account
-        </Link>
-      </div>
 
+        {/* Logged-in user */}
+        {user && (
+          <Link href="/dashboard" className="btn-primary">
+            Go to Dashboard
+          </Link>
+        )}
+
+        {/* Logged-out user */}
+        {!user && (
+          <>
+            <Link href="/auth/login" className="btn-primary">
+              Log in
+            </Link>
+            <Link href="/auth/signup" className="btn-secondary">
+              Create an account
+            </Link>
+          </>
+        )}
+      </div>
     </main>
   );
 }
