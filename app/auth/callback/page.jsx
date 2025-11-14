@@ -1,37 +1,32 @@
 "use client";
 
-export const dynamic = "force-dynamic"; // ⬅️ prevents prerendering
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
 export default function CallbackPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
-    async function handleCallback() {
-      const code = searchParams.get("code");
-
-      if (!code) {
-        router.push("/auth/login");
-        return;
-      }
-
-      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    async function handleSignIn() {
+      // Let Supabase parse the URL hash automatically
+      const { data, error } = await supabase.auth.getSession();
 
       if (error) {
-        console.error("Callback error:", error);
-        router.push("/auth/login");
+        console.error("Supabase callback error:", error);
+        router.replace("/auth/login");
         return;
       }
 
-      router.push("/dashboard");
+      // Successful session
+      router.replace("/dashboard");
     }
 
-    handleCallback();
-  }, [router, searchParams]);
+    handleSignIn();
+  }, [router]);
 
   return (
     <div className="w-full h-screen flex items-center justify-center text-gray-600">
