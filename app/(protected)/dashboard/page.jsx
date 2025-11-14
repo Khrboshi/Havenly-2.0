@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "../../lib/supabase";
-import { getCurrentUser } from "../../lib/session";
+import { supabase } from "../../../lib/supabase";
+import { getCurrentUser } from "../../../lib/session";
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
