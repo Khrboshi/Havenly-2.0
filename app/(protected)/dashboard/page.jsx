@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabase";
 import { getCurrentUser } from "../../../lib/session";
 import { updateUserStreak, getUserStreak } from "../../../lib/streaks";
+import { checkStreakAchievements } from "../../../lib/achievements";
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
@@ -13,6 +14,9 @@ export default function DashboardPage() {
   const [reflections, setReflections] = useState([]);
   const [moodHistory, setMoodHistory] = useState([]);
   const [streak, setStreak] = useState(null);
+
+  // Achievement popup
+  const [achievementPopup, setAchievementPopup] = useState(null);
 
   useEffect(() => {
     async function loadData() {
@@ -41,25 +45,31 @@ export default function DashboardPage() {
 
       setMoodHistory(moodData || []);
 
-      // ▌███ STREAK LOGIC STARTS HERE ███▐
-
-      // Load existing streak
+      // STREAK LOGIC
       const streakData = await getUserStreak(u.id);
       setStreak(streakData);
 
-      // Update streak for today (mood or reflection = daily activity)
+      // Update streak
       await updateUserStreak(u.id);
 
-      // Reload updated streak
       const refreshed = await getUserStreak(u.id);
       setStreak(refreshed);
 
-      // ▌███ STREAK LOGIC ENDS HERE ███▐
+      // Check achievements
+      const newlyUnlocked = await checkStreakAchievements(
+        u.id,
+        refreshed.current_streak
+      );
+
+      if (newlyUnlocked.length > 0) {
+        setAchievementPopup(newlyUnlocked[0]); // show first achievement
+      }
     }
 
     loadData();
   }, []);
 
+  // ---------------------- SUBMIT MOOD ----------------------
   async function submitMood() {
     if (!user) return;
 
@@ -69,13 +79,23 @@ export default function DashboardPage() {
       note: note || null,
     });
 
-    // Update streak after mood log
+    // Update streak & achievements
     await updateUserStreak(user.id);
+    const refreshed = await getUserStreak(user.id);
+    const newlyUnlocked = await checkStreakAchievements(
+      user.id,
+      refreshed.current_streak
+    );
+
+    if (newlyUnlocked.length > 0) {
+      setAchievementPopup(newlyUnlocked[0]);
+    }
 
     setNote("");
     alert("Mood saved!");
   }
 
+  // ------------------- SUBMIT REFLECTION -------------------
   async function submitReflection() {
     if (!user) return;
 
@@ -84,8 +104,17 @@ export default function DashboardPage() {
       content: reflection,
     });
 
-    // Update streak after reflection log
+    // Update streak & achievements
     await updateUserStreak(user.id);
+    const refreshed = await getUserStreak(user.id);
+    const newlyUnlocked = await checkStreakAchievements(
+      user.id,
+      refreshed.current_streak
+    );
+
+    if (newlyUnlocked.length > 0) {
+      setAchievementPopup(newlyUnlocked[0]);
+    }
 
     setReflection("");
     alert("Reflection saved!");
@@ -93,6 +122,20 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-xl mx-auto p-5 space-y-6">
+
+      {/* 🎉 Achievement Popup */}
+      {achievementPopup && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 bg-green-500 text-white px-5 py-3 rounded-xl shadow-lg animate-bounce z-50">
+          <p className="font-bold">🎉 Achievement Unlocked!</p>
+          <p className="text-sm">{achievementPopup.title}</p>
+          <button
+            className="text-xs mt-1 underline"
+            onClick={() => setAchievementPopup(null)}
+          >
+            Close
+          </button>
+        </div>
+      )}
 
       {/* Greeting */}
       <h1 className="text-2xl font-semibold">
