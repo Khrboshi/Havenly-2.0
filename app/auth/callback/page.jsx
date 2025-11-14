@@ -1,11 +1,13 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
+
+// Force dynamic route (fixes Vercel build errors)
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+export const revalidate = false;
 
 export default function CallbackPage() {
   const router = useRouter();
