@@ -1,22 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { signUp } from "../../../lib/auth";
 import Link from "next/link";
+import { supabase } from "../../../lib/supabase";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [statusMsg, setStatusMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    try {
-      await signUp(email, password);
-      setStatusMsg("Please check your email to confirm your account.");
-    } catch (err) {
-      setStatusMsg(err.message);
+    setStatusMsg("");
+    setErrorMsg("");
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      setErrorMsg(error.message);
+      return;
     }
+
+    setStatusMsg("Account created! Please check your email to confirm.");
   };
 
   return (
@@ -25,14 +37,18 @@ export default function SignupPage() {
 
       <form onSubmit={handleSignup} className="w-full max-w-sm flex flex-col gap-4">
 
+        {errorMsg && (
+          <p className="text-red-600 text-sm">{errorMsg}</p>
+        )}
+
         {statusMsg && (
-          <p className="text-slate-600 text-sm">{statusMsg}</p>
+          <p className="text-green-600 text-sm">{statusMsg}</p>
         )}
 
         <input
           type="email"
           placeholder="Email"
-          className="input border px-4 py-3 rounded-xl"
+          className="border px-4 py-3 rounded-xl w-full"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -41,13 +57,15 @@ export default function SignupPage() {
         <input
           type="password"
           placeholder="Password"
-          className="input border px-4 py-3 rounded-xl"
+          className="border px-4 py-3 rounded-xl w-full"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
 
-        <button className="btn-primary">Create Account</button>
+        <button className="bg-black text-white py-3 rounded-xl">
+          Create Account
+        </button>
 
         <Link href="/auth/login" className="text-slate-500 text-sm">
           Already have an account? Log in
