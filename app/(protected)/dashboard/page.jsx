@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabase";
 import { getCurrentUser } from "../../../lib/session";
+import { updateUserStreak, getUserStreak } from "../../../lib/streaks";
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
@@ -11,6 +12,7 @@ export default function DashboardPage() {
   const [reflection, setReflection] = useState("");
   const [reflections, setReflections] = useState([]);
   const [moodHistory, setMoodHistory] = useState([]);
+  const [streak, setStreak] = useState(null);
 
   useEffect(() => {
     async function loadData() {
@@ -38,6 +40,21 @@ export default function DashboardPage() {
         .limit(10);
 
       setMoodHistory(moodData || []);
+
+      // ▌███ STREAK LOGIC STARTS HERE ███▐
+
+      // Load existing streak
+      const streakData = await getUserStreak(u.id);
+      setStreak(streakData);
+
+      // Update streak for today (mood or reflection = daily activity)
+      await updateUserStreak(u.id);
+
+      // Reload updated streak
+      const refreshed = await getUserStreak(u.id);
+      setStreak(refreshed);
+
+      // ▌███ STREAK LOGIC ENDS HERE ███▐
     }
 
     loadData();
@@ -52,6 +69,9 @@ export default function DashboardPage() {
       note: note || null,
     });
 
+    // Update streak after mood log
+    await updateUserStreak(user.id);
+
     setNote("");
     alert("Mood saved!");
   }
@@ -64,17 +84,32 @@ export default function DashboardPage() {
       content: reflection,
     });
 
+    // Update streak after reflection log
+    await updateUserStreak(user.id);
+
     setReflection("");
     alert("Reflection saved!");
   }
 
   return (
     <div className="max-w-xl mx-auto p-5 space-y-6">
-      
+
       {/* Greeting */}
       <h1 className="text-2xl font-semibold">
         Welcome back{user ? ", " + (user.email || "") : ""} 👋
       </h1>
+
+      {/* 🔥 Daily Streak Badge */}
+      {streak && (
+        <div className="bg-blue-100 border border-blue-300 p-3 rounded-xl shadow text-center">
+          <p className="text-blue-800 font-medium">
+            🔥 Daily Streak: {streak.current_streak} days
+          </p>
+          <p className="text-xs text-gray-500">
+            Longest streak: {streak.longest_streak} days
+          </p>
+        </div>
+      )}
 
       {/* Quick Mood Tracker */}
       <div className="bg-white p-4 rounded-xl shadow">
@@ -145,7 +180,7 @@ export default function DashboardPage() {
 
       {/* Mood History */}
       <div className="bg-white p-4 rounded-xl shadow">
-        <h2 className="font-medium text-lg mb-2">Mood History</h2>
+        <h2 className="text-lg font-medium mb-2">Mood History</h2>
 
         {moodHistory.length === 0 && (
           <p className="text-sm text-gray-500">No data yet.</p>
@@ -153,7 +188,10 @@ export default function DashboardPage() {
 
         <ul className="space-y-1">
           {moodHistory.map((m) => (
-            <li key={m.id} className="flex justify-between text-sm border p-2 rounded">
+            <li
+              key={m.id}
+              className="flex justify-between text-sm border p-2 rounded"
+            >
               <span>Mood: {m.mood_value}/10</span>
               <span>{new Date(m.created_at).toLocaleDateString()}</span>
             </li>
