@@ -10,25 +10,17 @@ export default function CallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
-    async function finishAuth() {
-      // Let Supabase extract hash from URL
+    async function finish() {
       const { data, error } = await supabase.auth.getSession();
-
-      if (error) {
-        console.error("Supabase callback error:", error);
-        router.replace("/auth/login");
-        return;
-      }
-
+      if (error) return router.replace("/auth/login");
       router.replace("/dashboard");
     }
-
-    finishAuth();
+    finish();
   }, [router]);
 
   return (
     <div className="w-full h-screen flex items-center justify-center text-gray-600">
-      Completing sign-in...
+      Completing sign in...
     </div>
   );
 }
