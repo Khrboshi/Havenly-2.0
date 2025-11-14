@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser } from "../../lib/session";
+import BottomNav from "../../components/BottomNav";
 
 export default function ProtectedLayout({ children }) {
   const router = useRouter();
@@ -17,11 +18,15 @@ export default function ProtectedLayout({ children }) {
         setLoading(false);
       }
     }
-
     checkAuth();
   }, [router]);
 
   if (loading) return <div className="p-4 text-center">Loading...</div>;
 
-  return <>{children}</>;
+  return (
+    <div className="pb-20">
+      {children}
+      <BottomNav />
+    </div>
+  );
 }
