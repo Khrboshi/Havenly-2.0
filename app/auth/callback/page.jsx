@@ -4,33 +4,23 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
-// Force this page to never be pre-rendered
+// Dynamic — prevents prerendering on Vercel
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
 export const fetchCache = "force-no-store";
+export const revalidate = 0;
 
 export default function CallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
-    async function handleCallback() {
-      // Let Supabase read the URL and establish a session
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
+    async function finish() {
+      // Read session from URL hash
+      await supabase.auth.getSession();
 
-      if (error || !session) {
-        console.error("Auth callback failed:", error);
-        router.replace("/auth/login");
-        return;
-      }
-
-      // Logged in → redirect
+      // Redirect to dashboard
       router.replace("/dashboard");
     }
-
-    handleCallback();
+    finish();
   }, [router]);
 
   return (
