@@ -1,0 +1,78 @@
+import { NextResponse } from "next/server";
+import OpenAI from "openai";
+import { supabase } from "../../../lib/supabase";
+
+export async function POST(req) {
+  try {
+    const { user_id, text } = await req.json();
+
+    if (!user_id || !text) {
+      return NextResponse.json(
+        { error: "Missing required fields." },
+        { status: 400 }
+      );
+    }
+
+    // Initialize OpenAI from environment variable
+    const client = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    // Generate AI insight
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: "You are a mental health assistant." },
+        {
+          role: "user",
+          content:
+            `Summarize the following reflection and provide ONE helpful recommendation:\n\n${text}`,
+        },
+      ],
+    });
+
+    const aiText = completion.choices[0].message.content || "";
+
+    // Split into summary + recommendation
+    let summary = aiText;
+    let recommendation = "No recommendation provided.";
+
+    if (aiText.includes("Recommendation:")) {
+      const parts = aiText.split("Recommendation:");
+      summary = parts[0].trim();
+      recommendation = parts[1].trim();
+    }
+
+    // Save to Supabase
+    const { data, error } = await supabase
+      .from("ai_insights")
+      .insert({
+        user_id,
+        source: "reflection",
+        input_text: text,
+        ai_summary: summary,
+        ai_recommendation: recommendation,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error(error);
+      return NextResponse.json(
+        { error: "Failed to save AI insight." },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      insight: data,
+    });
+  } catch (err) {
+    console.error("AI Insight Error:", err);
+    return NextResponse.json(
+      { error: "Server error processing insight." },
+      { status: 500 }
+    );
+  }
+}
