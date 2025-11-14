@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "../../../lib/auth"h";
+import { signIn } from "../../../lib/auth";
 import Link from "next/link";
 
 export default function LoginPage() {
