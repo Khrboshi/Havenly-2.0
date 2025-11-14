@@ -1,6 +1,7 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -12,9 +13,16 @@ export default function CallbackPage() {
   useEffect(() => {
     async function finish() {
       const { data, error } = await supabase.auth.getSession();
-      if (error) return router.replace("/auth/login");
+
+      if (error) {
+        console.error("Auth error:", error);
+        router.replace("/auth/login");
+        return;
+      }
+
       router.replace("/dashboard");
     }
+
     finish();
   }, [router]);
 
