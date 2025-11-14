@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "../../../lib/auth";
 import Link from "next/link";
+import { supabase } from "../../../lib/supabase";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -11,12 +11,20 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    try {
-      await signIn(email, password);
-      window.location.href = "/reflect"; // Redirect after login
-    } catch (err) {
-      setErrorMsg(err.message);
+    setErrorMsg("");
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setErrorMsg(error.message);
+      return;
     }
+
+    // Redirect after successful login
+    window.location.href = "/dashboard";
   };
 
   return (
@@ -24,7 +32,7 @@ export default function LoginPage() {
       <h1 className="text-3xl font-semibold mb-6">Log in</h1>
 
       <form onSubmit={handleLogin} className="w-full max-w-sm flex flex-col gap-4">
-        
+
         {errorMsg && (
           <p className="text-red-600 text-sm">{errorMsg}</p>
         )}
@@ -32,7 +40,7 @@ export default function LoginPage() {
         <input
           type="email"
           placeholder="Email"
-          className="input border px-4 py-3 rounded-xl"
+          className="border px-4 py-3 rounded-xl w-full"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -41,13 +49,15 @@ export default function LoginPage() {
         <input
           type="password"
           placeholder="Password"
-          className="input border px-4 py-3 rounded-xl"
+          className="border px-4 py-3 rounded-xl w-full"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
 
-        <button className="btn-primary">Log in</button>
+        <button className="bg-black text-white py-3 rounded-xl">
+          Log in
+        </button>
 
         <Link href="/auth/signup" className="text-slate-500 text-sm">
           Create an account
