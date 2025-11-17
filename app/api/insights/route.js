@@ -31,6 +31,7 @@ export async function POST(req) {
       return Response.json({ error: "Missing text" }, { status: 400 });
     }
 
+    // Verify user session
     const {
       data: { user },
       error: authError,
@@ -40,17 +41,41 @@ export async function POST(req) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // GROQ client
     const client = new Groq({
       apiKey: process.env.GROQ_API_KEY,
     });
 
+    // 🟢 THE ONLY CORRECT COMPLETION BLOCK (STRICT SUMMARIZER)
     const completion = await client.chat.completions.create({
       model: "llama-3.1-8b-instant",
       messages: [
         {
           role: "system",
-          content:
-            "You are a summarization engine. OUTPUT RULES: (1) Only return a summary. (2) Summary must be 1–2 sentences. (3) Do NOT explain, define, greet, or ask questions. (4) Do NOT add context. (5) Do NOT respond conversationally. (6) ONLY summarize the user's text."
+          content: `
+You are a STRICT summarization engine.
+
+OUTPUT RULES:
+1. Only produce a summary.
+2. Summary must describe the user's emotional state, motivation, or intention.
+3. Summary must be 1–2 sentences.
+4. DO NOT define phrases, explain meanings, interpret idioms literally, or give dictionary-style responses.
+5. DO NOT greet, ask questions, or give advice.
+6. ONLY summarise the user's text as a feeling, intention, or emotional signal.
+
+EXAMPLES:
+User: "Let's get it"
+Output: "You feel energized and ready to begin."
+
+User: "Life feels heavy today"
+Output: "You’re feeling emotionally burdened and low."
+
+User: "I’m excited for tomorrow"
+Output: "You feel hopeful and eager about what's coming."
+
+User: "hello"
+Output: "You are initiating contact and looking to connect."
+`
         },
         { role: "user", content: text },
       ],
@@ -60,6 +85,7 @@ export async function POST(req) {
       completion.choices?.[0]?.message?.content?.trim() ||
       "No summary generated.";
 
+    // Save the reflection
     await supabase.from("reflections").insert({
       user_id: user.id,
       summary,
