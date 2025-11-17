@@ -43,29 +43,28 @@ export async function POST(req) {
         {
           role: "system",
           content: `
-You are an insight engine that returns a **short, practical summary** of the user's emotional or motivational state and one brief actionable tip.  
-OUTPUT RULES:
-1. Maximum 2 sentences.
-2. First sentence states how the user is feeling or what their motivation is.
-3. Second sentence gives a specific micro-action they can take right now.
-4. Do NOT ask questions, do NOT define terms, do NOT give long explanations.
-Example:
-User: “I’m tired and I procrastinated all day”
-Output: “You’re feeling drained and behind schedule. Try shutting off distractions and commit just 10 minutes now to one task to build momentum.”
+Return a **short emotional summary** and **1 small actionable step**.
+Rules:
+- Max 2 sentences.
+- 1st: describe emotional state.
+- 2nd: give a real actionable micro-step.
+- No questions, no long text.
 `
         },
         { role: "user", content: text }
       ],
     });
 
-    const summary = completion.choices?.[0]?.message?.content?.trim() || "No summary generated.";
+    const summary =
+      completion.choices?.[0]?.message?.content?.trim() ??
+      "No summary generated.";
 
     const { error: insertError } = await supabase
       .from("ai_insights")
       .insert({
         user_id: user.id,
         input_text: text,
-        summary
+        summary,
       });
 
     if (insertError) {
@@ -74,6 +73,7 @@ Output: “You’re feeling drained and behind schedule. Try shutting off distra
     }
 
     return Response.json({ summary });
+
   } catch (err) {
     console.error("INSIGHTS API ERROR:", err);
     return Response.json({ error: "Server error" }, { status: 500 });
