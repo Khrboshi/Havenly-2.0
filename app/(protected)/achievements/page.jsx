@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "../../../lib/supabase";
-import { getCurrentUser } from "../../../lib/session";
+import { supabase } from "../../../lib/supabaseClient";
+import { getCurrentUser } from "../../../lib/getCurrentUser";
 
 export default function AchievementsPage() {
   const [user, setUser] = useState(null);
@@ -29,7 +29,6 @@ export default function AchievementsPage() {
 
   return (
     <div className="max-w-xl mx-auto p-5 space-y-6">
-
       <h1 className="text-2xl font-semibold">Achievements</h1>
 
       {achievements.length === 0 && (
