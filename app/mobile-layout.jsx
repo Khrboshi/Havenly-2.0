@@ -1,20 +1,50 @@
 "use client";
 
-export default function MobileLayout({ children }) {
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white text-slate-800 flex flex-col">
-      <div className="flex-1 px-4 py-6">
-        {children}
-      </div>
+import "./globals.css";
+import { cn } from "@/lib/utils";
+import BottomNav from "@/components/BottomNav";
+import { Toaster } from "sonner";
+import { useEffect } from "react";
 
-      {/* Bottom Navigation */}
-      <nav className="h-16 bg-white border-t flex justify-around items-center fixed bottom-0 left-0 right-0 shadow-lg">
-        <a href="/dashboard" className="text-sm text-slate-600">Dashboard</a>
-        <a href="/mood" className="text-sm text-slate-600">Mood</a>
-        <a href="/journal" className="text-sm text-slate-600">Journal</a>
-        <a href="/insights" className="text-sm text-slate-600">Insights</a>
-        <a href="/profile" className="text-sm text-slate-600">Profile</a>
-      </nav>
-    </div>
+export default function MobileLayout({ children }) {
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").then((reg) => {
+        reg.onupdatefound = () => {
+          const newWorker = reg.installing;
+
+          newWorker.addEventListener("statechange", () => {
+            if (
+              newWorker.state === "installed" &&
+              navigator.serviceWorker.controller
+            ) {
+              // Force update on mobile
+              window.location.reload();
+            }
+          });
+        };
+      });
+    }
+  }, []);
+
+  return (
+    <html lang="en">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#0D7A7E" />
+        <link rel="apple-touch-icon" href="/icons/apple-icon-180.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+      </head>
+
+      <body className={cn("min-h-screen bg-background antialiased pb-20")}>
+        {children}
+
+        {/* Mobile bottom navigation */}
+        <BottomNav />
+
+        {/* Toast notifications */}
+        <Toaster />
+      </body>
+    </html>
   );
 }
