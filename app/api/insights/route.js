@@ -50,7 +50,7 @@ export async function POST(req) {
         {
           role: "system",
           content:
-            "You are a summarization engine. Always return a single short summary (1–2 sentences). Do NOT greet, ask questions, or start a conversation. ONLY output the summary."
+            "You are a summarization engine. OUTPUT RULES: (1) Only return a summary. (2) Summary must be 1–2 sentences. (3) Do NOT explain, define, greet, or ask questions. (4) Do NOT add context. (5) Do NOT respond conversationally. (6) ONLY summarize the user's text."
         },
         { role: "user", content: text },
       ],
