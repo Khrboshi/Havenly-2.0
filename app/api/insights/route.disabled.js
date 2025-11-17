@@ -1,49 +1,51 @@
+import { NextResponse } from "next/server";
+import { createServerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
 import OpenAI from "openai";
-import { supabase } from "../../../lib/supabase";
-
-// Disable caching
-export const dynamic = "force-dynamic";
 
 export async function POST(req) {
-  try {
-    const { text, user_id } = await req.json();
+  const cookieStore = cookies();
 
-    if (!text || !user_id) {
-      return new Response(
-        JSON.stringify({ error: "Missing text or user_id" }),
-        { status: 400 }
-      );
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get: (name) => cookieStore.get(name)?.value,
+      },
     }
+  );
 
-    // 1. AI summary
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-    const ai = await client.responses.create({
-      model: "gpt-4.1-mini",
-      input: `Summarize the emotional meaning of this reflection in 3–4 sentences (empathetic, simple): ${text}`
-    });
-
-    const summary = ai.output_text;
-
-    // 2. Save to Supabase
-    const { error } = await supabase.from("reflections").insert({
-      user_id,
-      text,
-      summary
-    });
-
-    if (error) {
-      console.error(error);
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 500,
-      });
-    }
-
-    return new Response(JSON.stringify({ summary }), { status: 200 });
-  } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify({ error: "Server error" }), {
-      status: 500,
-    });
+  if (!session?.user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
+
+  const user_id = session.user.id;
+  const { text } = await req.json();
+
+  // Call OpenAI
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+  const ai = await client.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      { role: "system", content: "Summarize the user's reflection briefly." },
+      { role: "user", content: text },
+    ],
+  });
+
+  const summary = ai.choices[0].message.content;
+
+  // Store in DB
+  await supabase.from("reflections").insert({
+    user_id,
+    content: text,
+    summary,
+  });
+
+  return NextResponse.json({ summary });
 }
