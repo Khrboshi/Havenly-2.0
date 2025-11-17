@@ -2,11 +2,7 @@
 const nextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react"],
-    serverActions: {
-      allowedOrigins: ["*"],
-    },
   },
-
   async headers() {
     return [
       {
