@@ -1,58 +1,56 @@
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/auth-helpers-nextjs";
+"use client";
 
-export const dynamic = "force-dynamic";
+import { supabase } from "../../../lib/supabase";
+import { useEffect, useState } from "react";
 
-export default async function InsightsPage() {
-  const cookieStore = cookies();
+export default function InsightsPage() {
+  const [insights, setInsights] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Server-side Supabase client
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        get: (name) => cookieStore.get(name)?.value,
-      },
+  useEffect(() => {
+    async function load() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.user) {
+        window.location.href = "/auth/login";
+        return;
+      }
+
+      const { data } = await supabase
+        .from("ai_insights")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .order("created_at", { ascending: false });
+
+      setInsights(data || []);
+      setLoading(false);
     }
-  );
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    load();
+  }, []);
 
-  const user = session?.user;
-  if (!user) {
-    return <p className="p-6">Please log in.</p>;
-  }
-
-  // Fetch reflections
-  const { data } = await supabase
-    .from("reflections")
-    .select("summary, created_at")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  if (loading) return <p className="p-6">Loading...</p>;
 
   return (
     <main className="p-6 pb-28">
       <h1 className="text-2xl font-semibold mb-4">Insights</h1>
 
       <div className="grid gap-4">
-        {(!data || data.length === 0) && (
-          <p className="text-gray-500">No insights yet.</p>
-        )}
-
-        {data?.map((item, idx) => (
-          <div
-            key={idx}
-            className="p-4 bg-white border rounded-xl shadow"
-          >
-            <p className="text-slate-700">{item.summary}</p>
-            <p className="text-xs text-slate-500 mt-1">
-              {new Date(item.created_at).toLocaleDateString()}
+        {insights.map((insight) => (
+          <div key={insight.id} className="p-4 bg-white border rounded-xl shadow">
+            <p className="font-semibold mb-1">{insight.ai_summary}</p>
+            <p className="text-sm text-gray-600">{insight.ai_recommendation}</p>
+            <p className="text-xs text-gray-400 mt-2">
+              {new Date(insight.created_at).toLocaleString()}
             </p>
           </div>
         ))}
+
+        {insights.length === 0 && (
+          <p className="text-gray-500">No insights yet.</p>
+        )}
       </div>
     </main>
   );
