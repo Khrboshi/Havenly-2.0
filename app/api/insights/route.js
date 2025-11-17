@@ -1,16 +1,9 @@
-import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 import OpenAI from "openai";
 
 export async function POST(req) {
   try {
-    // Parse request
-    const { text } = await req.json();
-    if (!text) {
-      return Response.json({ error: "Missing text" }, { status: 400 });
-    }
-
-    // Initialize Supabase with SERVER cookies
     const cookieStore = cookies();
 
     const supabase = createServerClient(
@@ -18,26 +11,37 @@ export async function POST(req) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       {
         cookies: {
-          get(name) {
-            return cookieStore.get(name)?.value;
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
           },
         },
       }
     );
 
-    // Get user session
+    // Parse request
+    const { text } = await req.json();
+    if (!text) {
+      return Response.json({ error: "Missing text" }, { status: 400 });
+    }
+
+    // Get authenticated user
     const {
       data: { user },
-      error: userError,
+      error: authError,
     } = await supabase.auth.getUser();
 
-    if (userError || !user) {
+    if (!user || authError) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const user_id = user.id;
 
-    // Generate summary with OpenAI
+    // Summarize with OpenAI
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     const completion = await client.chat.completions.create({
@@ -51,7 +55,7 @@ export async function POST(req) {
     const summary =
       completion.choices?.[0]?.message?.content || "No summary generated.";
 
-    // Save reflection in DB
+    // Save reflection
     await supabase.from("reflections").insert({
       user_id,
       summary,
@@ -60,7 +64,7 @@ export async function POST(req) {
 
     return Response.json({ summary });
   } catch (err) {
-    console.error(err);
+    console.error("[INSIGHTS API ERROR]", err);
     return Response.json({ error: "Server error" }, { status: 500 });
   }
 }
