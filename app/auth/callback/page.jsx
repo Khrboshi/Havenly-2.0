@@ -5,16 +5,18 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
 export const dynamic = "force-dynamic";
-export const revalidate = false;
 
 export default function CallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
     async function finish() {
+      // Forces Supabase to refresh session:
       await supabase.auth.getSession();
+
       router.replace("/dashboard");
     }
+
     finish();
   }, [router]);
 
