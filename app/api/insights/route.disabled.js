@@ -1,51 +1,32 @@
-import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
-import OpenAI from "openai";
+const sendReflection = async () => {
+  if (!text.trim()) return;
 
-export async function POST(req) {
-  const cookieStore = cookies();
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        get: (name) => cookieStore.get(name)?.value,
-      },
-    }
-  );
+  setLoading(true);
 
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
   if (!session?.user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    window.location.href = "/auth/login";
+    return;
   }
 
-  const user_id = session.user.id;
-  const { text } = await req.json();
+  try {
+    const res = await fetch("/api/insights", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }), // DO NOT SEND user_id
+    });
 
-  // Call OpenAI
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    if (!res.ok) throw new Error("API error");
 
-  const ai = await client.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      { role: "system", content: "Summarize the user's reflection briefly." },
-      { role: "user", content: text },
-    ],
-  });
+    const data = await res.json();
+    setResponse(data.summary || "Something went wrong.");
+  } catch (err) {
+    console.error(err);
+    setResponse("Something went wrong.");
+  }
 
-  const summary = ai.choices[0].message.content;
-
-  // Store in DB
-  await supabase.from("reflections").insert({
-    user_id,
-    content: text,
-    summary,
-  });
-
-  return NextResponse.json({ summary });
-}
+  setLoading(false);
+};
