@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import OpenAI from "openai";
+import Groq from "groq-sdk";
 
 export async function POST(req) {
   try {
@@ -26,11 +26,13 @@ export async function POST(req) {
       }
     );
 
+    // Parse request body
     const { text } = await req.json();
     if (!text) {
       return Response.json({ error: "Missing text" }, { status: 400 });
     }
 
+    // Ensure user is authenticated
     const {
       data: { user },
       error: authError,
@@ -40,14 +42,19 @@ export async function POST(req) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+    // Initialize Groq client (FREE)
+    const client = new Groq({
+      apiKey: process.env.GROQ_API_KEY,
     });
 
+    // Generate summary with Llama 3.1
     const completion = await client.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "llama-3.1-8b-instant",
       messages: [
-        { role: "system", content: "Summarize the reflection in 1–2 sentences." },
+        {
+          role: "system",
+          content: "Summarize the reflection in 1–2 sentences.",
+        },
         { role: "user", content: text },
       ],
     });
@@ -56,6 +63,7 @@ export async function POST(req) {
       completion.choices?.[0]?.message?.content ||
       "No summary generated.";
 
+    // Save to Supabase
     await supabase.from("reflections").insert({
       user_id: user.id,
       summary,
