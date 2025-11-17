@@ -13,9 +13,12 @@ export default function LoginPage() {
     e.preventDefault();
     setErrorMsg("");
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
 
     if (error) {
@@ -23,8 +26,8 @@ export default function LoginPage() {
       return;
     }
 
-    // Redirect after successful login
-    window.location.href = "/dashboard";
+    // Supabase will set the auth cookies AFTER callback
+    window.location.href = "/auth/callback";
   };
 
   return (
