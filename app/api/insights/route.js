@@ -1,28 +1,38 @@
-import { supabase } from "../../../lib/supabase";
+import { cookies } from "next/headers";
 import OpenAI from "openai";
+import { createServerClient } from "@supabase/ssr";
 
 export async function POST(req) {
   try {
-    // Parse request body
+    // Create authenticated server-side Supabase client
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      { cookies }
+    );
+
+    // Parse body
     const { text } = await req.json();
     if (!text) {
       return Response.json({ error: "Missing text" }, { status: 400 });
     }
 
-    // Get session server-side
+    // Get authenticated user from cookies
     const {
       data: { user },
-      error: authError,
+      error: userError,
     } = await supabase.auth.getUser();
 
-    if (authError || !user) {
+    if (userError || !user) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const user_id = user.id;
 
-    // Summarize with OpenAI
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    // OpenAI summary
+    const client = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
 
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
@@ -42,11 +52,9 @@ export async function POST(req) {
       input_text: text,
     });
 
-    return Response.json({
-      summary,
-    });
+    return Response.json({ summary });
   } catch (err) {
-    console.error(err);
+    console.error("[INSIGHTS API ERROR]", err);
     return Response.json({ error: "Server error" }, { status: 500 });
   }
 }
