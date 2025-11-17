@@ -2,16 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-.btn-primary {
-  @apply bg-primary text-white font-medium px-4 py-3 rounded-xl w-full 
-  text-center shadow-md active:scale-95 transition;
+html, body {
+  height: 100%;
+  background-color: #fafafa;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.btn-secondary {
-  @apply border border-primary text-primary font-medium px-4 py-3 rounded-xl 
-  w-full text-center hover:bg-primary hover:text-white active:scale-95 transition;
+:root {
+  --radius: 1rem;
 }
 
-input {
-  @apply border rounded-xl px-4 py-3 w-full bg-white;
+/* iOS safe-area support */
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Smooth transitions everywhere */
+* {
+  transition: background 0.2s ease, color 0.2s ease;
 }
