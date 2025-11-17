@@ -19,11 +19,14 @@ export async function POST(req) {
               cookieStore.set(name, value, options);
             });
           },
+          remove(name, options) {
+            cookieStore.set(name, "", { ...options, maxAge: 0 });
+          },
         },
       }
     );
 
-    // Parse request
+    // Read JSON body
     const { text } = await req.json();
     if (!text) {
       return Response.json({ error: "Missing text" }, { status: 400 });
@@ -39,11 +42,12 @@ export async function POST(req) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user_id = user.id;
+    // Prepare OpenAI client
+    const client = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
 
-    // OpenAI summary
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
+    // Generate summary
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -53,11 +57,12 @@ export async function POST(req) {
     });
 
     const summary =
-      completion.choices?.[0]?.message?.content || "No summary generated.";
+      completion.choices?.[0]?.message?.content ||
+      "No summary generated.";
 
-    // Save to DB
+    // Save to Supabase
     await supabase.from("reflections").insert({
-      user_id,
+      user_id: user.id,
       summary,
       input_text: text,
     });
