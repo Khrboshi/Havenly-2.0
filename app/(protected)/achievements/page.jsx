@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "../../../lib/supabaseClient";
-import { getCurrentUser } from "../../../lib/getCurrentUser";
+import { supabase } from "../../../lib/supabase";
+import { getCurrentUser } from "../../../lib/session";
 
 export default function AchievementsPage() {
   const [user, setUser] = useState(null);
@@ -32,11 +32,13 @@ export default function AchievementsPage() {
       <h1 className="text-2xl font-semibold">Achievements</h1>
 
       {achievements.length === 0 && (
-        <p className="text-gray-500">No achievements yet — keep building your streak!</p>
+        <p className="text-gray-500">
+          No achievements yet — keep building your streak!
+        </p>
       )}
 
       <ul className="space-y-4">
-        {achievements.map(a => (
+        {achievements.map((a) => (
           <li key={a.id} className="border p-3 rounded shadow bg-white">
             <p className="font-bold">🎉 {a.title}</p>
             <p className="text-sm text-gray-600">{a.description}</p>
