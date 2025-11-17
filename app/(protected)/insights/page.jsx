@@ -1,14 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createBrowserClient } from "@supabase/ssr";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 export default function InsightsPage() {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
-
+  const supabase = createClientComponentClient();
   const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,11 +13,10 @@ export default function InsightsPage() {
       const { data, error } = await supabase
         .from("ai_insights")
         .select("*")
+        .eq("user_id", (await supabase.auth.getUser()).data.user?.id)
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("INSIGHTS LOAD ERROR:", error);
-      } else {
+      if (!error) {
         setInsights(data || []);
       }
 
@@ -31,34 +26,40 @@ export default function InsightsPage() {
     loadInsights();
   }, []);
 
-  if (loading) {
-    return <div className="p-6 text-slate-500">Loading insights...</div>;
-  }
-
-  if (insights.length === 0) {
-    return <div className="p-6 text-slate-500">No insights yet.</div>;
-  }
-
   return (
-    <div className="p-6 flex flex-col gap-4">
-      {insights.map((item) => (
-        <div key={item.id} className="border p-4 rounded-xl shadow-sm bg-white">
-          <div className="text-xs text-slate-400 mb-2">
-            {new Date(item.created_at).toLocaleString()}
-          </div>
+    <div className="max-w-2xl mx-auto p-6 pb-24">
+      <h1 className="text-2xl font-semibold mb-4">Insights</h1>
 
-          <div className="text-slate-800 font-semibold">
-            {item.summary}
-          </div>
+      {loading && (
+        <p className="text-slate-500">Loading insights...</p>
+      )}
 
-          {item.input_text && (
-            <div className="text-slate-500 mt-2 text-sm">
-              <span className="font-medium text-slate-700">Reflection:</span>{" "}
-              {item.input_text}
+      {!loading && insights.length === 0 && (
+        <p className="text-slate-500">No insights yet.</p>
+      )}
+
+      <div className="flex flex-col gap-4">
+        {insights.map((item) => (
+          <div
+            key={item.id}
+            className="p-5 rounded-xl bg-white shadow-sm border animate-fadeIn"
+            style={{ animationDelay: "0.05s" }}
+          >
+            <div className="text-xs text-slate-400 mb-1">
+              {new Date(item.created_at).toLocaleString()}
             </div>
-          )}
-        </div>
-      ))}
+
+            <p className="text-slate-800 leading-relaxed">
+              {item.summary}
+            </p>
+
+            <p className="text-slate-500 text-sm mt-3">
+              <span className="font-medium text-slate-600">Reflection:</span>{" "}
+              {item.input_text}
+            </p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
