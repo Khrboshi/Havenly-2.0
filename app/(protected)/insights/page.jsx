@@ -1,12 +1,32 @@
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/auth-helpers-nextjs";
+
 export const dynamic = "force-dynamic";
-import { supabase } from "../../../lib/supabase";
 
 export default async function InsightsPage() {
-  const session = await supabase.auth.getSession();
-  const user = session.data.session?.user;
+  const cookieStore = cookies();
 
-  if (!user) return <p className="p-6">Please log in.</p>;
+  // Server-side Supabase client
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get: (name) => cookieStore.get(name)?.value,
+      },
+    }
+  );
 
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const user = session?.user;
+  if (!user) {
+    return <p className="p-6">Please log in.</p>;
+  }
+
+  // Fetch reflections
   const { data } = await supabase
     .from("reflections")
     .select("summary, created_at")
@@ -18,6 +38,10 @@ export default async function InsightsPage() {
       <h1 className="text-2xl font-semibold mb-4">Insights</h1>
 
       <div className="grid gap-4">
+        {(!data || data.length === 0) && (
+          <p className="text-gray-500">No insights yet.</p>
+        )}
+
         {data?.map((item, idx) => (
           <div
             key={idx}
