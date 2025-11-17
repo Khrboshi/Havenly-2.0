@@ -11,10 +11,13 @@ export default function CallbackPage() {
 
   useEffect(() => {
     async function finish() {
-      // Forces Supabase to refresh session:
+      // Refresh session + force Supabase to write auth cookies
       await supabase.auth.getSession();
 
-      router.replace("/dashboard");
+      // Short delay ensures cookies are written before redirect
+      setTimeout(() => {
+        router.replace("/dashboard");
+      }, 100);
     }
 
     finish();
