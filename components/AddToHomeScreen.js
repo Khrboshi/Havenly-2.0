@@ -3,83 +3,110 @@
 import { useEffect, useState } from "react";
 
 export default function AddToHomeScreen() {
-  const [isIOS, setIsIOS] = useState(false);
-  const [isChrome, setIsChrome] = useState(false);
-  const [promptEvent, setPromptEvent] = useState(null);
-  const [show, setShow] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [isIos, setIsIos] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
-    const userAgent = window.navigator.userAgent.toLowerCase();
+    const ua = window.navigator.userAgent.toLowerCase();
+    const ios = /iphone|ipad|ipod/.test(ua);
+    const standalone =
+      navigator.standalone ||
+      window.matchMedia("(display-mode: standalone)").matches;
 
-    // Detect iOS Safari
-    const iOS =
-      /iphone|ipad|ipod/.test(userAgent) &&
-      !window.navigator.standalone;
+    setIsIos(ios);
+    setIsStandalone(standalone);
 
-    setIsIOS(iOS);
+    const dismissed = localStorage.getItem("a2hs-dismissed");
 
-    // Detect Chrome (Android)
-    setIsChrome(window.matchMedia("(display-mode: browser)").matches);
-
-    // Handle Android install prompt
-    window.addEventListener("beforeinstallprompt", (e) => {
-      e.preventDefault();
-      setPromptEvent(e);
-      setShow(true);
-    });
+    // Show after 3 seconds — proven best timing for user engagement
+    if (ios && !standalone && !dismissed) {
+      setTimeout(() => setVisible(true), 2200);
+    }
   }, []);
 
-  const installPWA = async () => {
-    if (!promptEvent) return;
-    promptEvent.prompt();
-    const result = await promptEvent.userChoice;
-    if (result.outcome === "accepted") setShow(false);
+  const close = () => {
+    localStorage.setItem("a2hs-dismissed", "true");
+    setVisible(false);
   };
 
-  // Auto-show for iOS users
-  useEffect(() => {
-    if (isIOS) setShow(true);
-  }, [isIOS]);
-
-  if (!show) return null;
+  if (!visible) return null;
 
   return (
-    <div className="fixed bottom-4 left-0 right-0 mx-auto w-[90%] max-w-md bg-white shadow-md rounded-xl p-4 border border-gray-200 animate-fadeIn z-50">
-      {/* ANDROID */}
-      {promptEvent && (
-        <>
-          <p className="text-sm font-medium">
-            Install Havenly for a faster experience.
+    <>
+      {/* Background blur */}
+      <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 animate-fadeIn" />
+
+      {/* Popup card */}
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-sm z-50 animate-slideUp">
+        <div className="bg-white shadow-2xl rounded-2xl p-5 border border-gray-200 relative">
+
+          {/* Attention grabber icon */}
+          <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-white shadow-md rounded-full p-3 animate-bounceSlow">
+            {isIos ? (
+              <span className="text-2xl">📤</span>  // iOS share icon style
+            ) : (
+              <span className="text-2xl">⬇️</span>
+            )}
+          </div>
+
+          <h2 className="text-lg font-semibold text-gray-900 mt-4 text-center">
+            Add Havenly to your Home Screen
+          </h2>
+
+          <p className="text-sm text-gray-600 mt-2 text-center leading-relaxed">
+            Install the app for quicker access and a better experience.
           </p>
+
+          {isIos ? (
+            <p className="text-xs text-gray-600 mt-3 text-center">
+              Tap <strong>Share → “Add to Home Screen”</strong>.
+            </p>
+          ) : (
+            <p className="text-xs text-gray-600 mt-3 text-center">
+              Tap <strong>Install App</strong> from your browser menu.
+            </p>
+          )}
 
           <button
-            onClick={installPWA}
-            className="mt-3 w-full bg-black text-white py-2 rounded-lg"
+            onClick={close}
+            className="mt-5 w-full py-2 text-sm text-gray-600 border rounded-xl hover:bg-gray-50 transition"
           >
-            Install App
+            Got it
           </button>
-        </>
-      )}
-
-      {/* iOS SAFARI */}
-      {isIOS && !promptEvent && (
-        <div>
-          <p className="text-sm font-medium">
-            Add Havenly to your Home Screen:
-          </p>
-          <ul className="mt-2 text-sm text-gray-700 list-disc pl-4">
-            <li>Tap the <strong>Share</strong> button</li>
-            <li>Select <strong>“Add to Home Screen”</strong></li>
-          </ul>
         </div>
-      )}
+      </div>
 
-      <button
-        onClick={() => setShow(false)}
-        className="mt-3 text-xs text-gray-500 w-full text-center"
-      >
-        Dismiss
-      </button>
-    </div>
+      {/* Animations */}
+      <style jsx>{`
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translate(-50%, 20px);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, 0);
+          }
+        }
+
+        @keyframes bounceSlow {
+          0%, 100% {
+            transform: translate(-50%, 0);
+          }
+          50% {
+            transform: translate(-50%, -6px);
+          }
+        }
+
+        .animate-slideUp {
+          animation: slideUp 0.35s ease-out forwards;
+        }
+
+        .animate-bounceSlow {
+          animation: bounceSlow 1.6s ease-in-out infinite;
+        }
+      `}</style>
+    </>
   );
 }
