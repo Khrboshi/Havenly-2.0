@@ -1,62 +1,42 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
 export async function POST() {
-  const supabase = createRouteHandlerClient({ cookies });
+  try {
+    const cookieStore = cookies();
 
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      {
+        cookies: {
+          get(name) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name, value, options) {
+            cookieStore.set(name, value, options);
+          },
+          remove(name, options) {
+            cookieStore.set(name, "", { ...options, maxAge: 0 });
+          },
+        },
+      }
+    );
 
-  if (!user) return new Response("Unauthorized", { status: 401 });
+    const {
+      data: { user },
+      error: userError
+    } = await supabase.auth.getUser();
 
-  const today = new Date().toISOString().split("T")[0];
+    if (userError || !user) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-  const { data: streak } = await supabase
-    .from("streaks")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
+    await supabase.rpc("increment_streak", { uid: user.id });
 
-  // First time ever → create streak row
-  if (!streak) {
-    await supabase.from("streaks").insert({
-      user_id: user.id,
-      current_streak: 1,
-      longest_streak: 1,
-      last_reflection_date: today
-    });
-
-    return new Response("OK");
+    return Response.json({ success: true });
+  } catch (err) {
+    console.error("STREAK UPDATE ERROR:", err);
+    return Response.json({ error: "Server error" }, { status: 500 });
   }
-
-  const last = streak.last_reflection_date
-    ? new Date(streak.last_reflection_date)
-    : null;
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  let updatedStreak = streak.current_streak;
-
-  if (last?.toISOString().split("T")[0] === today) {
-    // Already did reflection today → do nothing
-  } else if (last?.toDateString() === yesterday.toDateString()) {
-    // Continue streak
-    updatedStreak += 1;
-  } else {
-    // Streak broken
-    updatedStreak = 1;
-  }
-
-  await supabase
-    .from("streaks")
-    .update({
-      current_streak: updatedStreak,
-      longest_streak: Math.max(updatedStreak, streak.longest_streak),
-      last_reflection_date: today,
-      updated_at: new Date()
-    })
-    .eq("user_id", user.id);
-
-  return new Response("OK");
 }
