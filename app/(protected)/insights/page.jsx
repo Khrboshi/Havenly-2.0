@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function InsightsPage() {
-  const [reflections, setReflections] = useState([]);
+  const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,12 +20,12 @@ export default function InsightsPage() {
       }
 
       const { data, error } = await supabase
-        .from("reflections")
+        .from("ai_insights")
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
-      if (!error) setReflections(data);
+      if (!error) setInsights(data || []);
       setLoading(false);
     }
 
@@ -34,19 +34,27 @@ export default function InsightsPage() {
 
   return (
     <main className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Your Insights</h1>
+      <h1 className="text-2xl font-bold mb-4">Insights</h1>
 
       {loading && <p>Loading...</p>}
 
-      {!loading && reflections.length === 0 && (
+      {!loading && insights.length === 0 && (
         <p className="text-slate-500">No insights yet.</p>
       )}
 
       <ul className="space-y-4">
-        {reflections.map((item) => (
-          <li key={item.id} className="p-4 border rounded-xl bg-white shadow-sm">
-            <p className="text-sm text-slate-600">{item.summary}</p>
-            <p className="text-xs text-slate-400 mt-2">
+        {insights.map((item) => (
+          <li
+            key={item.id}
+            className="p-4 border rounded-xl bg-white shadow-sm"
+          >
+            <p className="font-medium">{item.summary}</p>
+
+            <p className="text-xs text-slate-500 mt-2">
+              Reflection: {item.input_text}
+            </p>
+
+            <p className="text-xs text-slate-400 mt-1">
               {new Date(item.created_at).toLocaleString()}
             </p>
           </li>
