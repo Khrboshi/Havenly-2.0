@@ -1,10 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
+    optimizePackageImports: ["lucide-react"],
     serverActions: {
       allowedOrigins: ["*"],
     },
-    optimizePackageImports: ["lucide-react"],
   },
 
   async headers() {
@@ -13,10 +13,10 @@ const nextConfig = {
         source: "/manifest.json",
         headers: [
           { key: "Content-Type", value: "application/manifest+json" }
-        ],
-      },
+        ]
+      }
     ];
-  },
+  }
 };
 
 module.exports = nextConfig;
