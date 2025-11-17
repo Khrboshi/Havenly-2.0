@@ -26,13 +26,11 @@ export async function POST(req) {
       }
     );
 
-    // Parse request body
     const { text } = await req.json();
     if (!text) {
       return Response.json({ error: "Missing text" }, { status: 400 });
     }
 
-    // Ensure user is authenticated
     const {
       data: { user },
       error: authError,
@@ -42,28 +40,26 @@ export async function POST(req) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Initialize Groq client (FREE)
     const client = new Groq({
       apiKey: process.env.GROQ_API_KEY,
     });
 
-    // Generate summary with Llama 3.1
     const completion = await client.chat.completions.create({
       model: "llama-3.1-8b-instant",
       messages: [
         {
           role: "system",
-          content: "Summarize the reflection in 1–2 sentences.",
+          content:
+            "You are a summarization engine. Always return a single short summary (1–2 sentences). Do NOT greet, ask questions, or start a conversation. ONLY output the summary."
         },
         { role: "user", content: text },
       ],
     });
 
     const summary =
-      completion.choices?.[0]?.message?.content ||
+      completion.choices?.[0]?.message?.content?.trim() ||
       "No summary generated.";
 
-    // Save to Supabase
     await supabase.from("reflections").insert({
       user_id: user.id,
       summary,
