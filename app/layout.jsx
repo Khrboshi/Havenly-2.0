@@ -1,6 +1,7 @@
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { Toaster } from "@/components/ui/sonner";
+"use client";
+import { Toaster } from "sonner";
 
 export const metadata = {
   title: "Havenly",
