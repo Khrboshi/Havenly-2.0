@@ -4,25 +4,30 @@ import { useEffect } from "react";
 
 export default function ForceReload() {
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.getRegistrations().then((regs) => {
-        for (let reg of regs) {
-          reg.unregister();
+    async function resetSW() {
+      // Unregister all service workers
+      if ("serviceWorker" in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          await reg.unregister();
         }
-      });
-
-      // Hard clear cache storage
-      if (window.caches) {
-        caches.keys().then((keys) =>
-          keys.forEach((key) => caches.delete(key))
-        );
       }
 
-      // Hard reload page after killing SW
+      // Delete caches
+      if (window.caches) {
+        const keys = await caches.keys();
+        for (const key of keys) {
+          await caches.delete(key);
+        }
+      }
+
+      // Force HARD reload
       setTimeout(() => {
-        window.location.reload(true);
+        window.location.reload();
       }, 300);
     }
+
+    resetSW();
   }, []);
 
   return null;
