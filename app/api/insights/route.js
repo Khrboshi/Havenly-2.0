@@ -26,13 +26,11 @@ export async function POST(req) {
       }
     );
 
-    // Read JSON body
     const { text } = await req.json();
     if (!text) {
       return Response.json({ error: "Missing text" }, { status: 400 });
     }
 
-    // Get authenticated user
     const {
       data: { user },
       error: authError,
@@ -42,12 +40,10 @@ export async function POST(req) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Prepare OpenAI client
     const client = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    // Generate summary
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -60,7 +56,6 @@ export async function POST(req) {
       completion.choices?.[0]?.message?.content ||
       "No summary generated.";
 
-    // Save to Supabase
     await supabase.from("reflections").insert({
       user_id: user.id,
       summary,
