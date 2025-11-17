@@ -1,19 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createBrowserClient } from "@supabase/ssr";
 
 export default function InsightsPage() {
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
+
   const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadInsights() {
-      const {
-        data,
-        error
-      } = await supabase
+      const { data, error } = await supabase
         .from("ai_insights")
         .select("*")
         .order("created_at", { ascending: false });
@@ -41,10 +42,7 @@ export default function InsightsPage() {
   return (
     <div className="p-6 flex flex-col gap-4">
       {insights.map((item) => (
-        <div
-          key={item.id}
-          className="border p-4 rounded-xl shadow-sm bg-white"
-        >
+        <div key={item.id} className="border p-4 rounded-xl shadow-sm bg-white">
           <div className="text-xs text-slate-400 mb-2">
             {new Date(item.created_at).toLocaleString()}
           </div>
