@@ -6,6 +6,7 @@ export async function POST(req) {
   try {
     const cookieStore = cookies();
 
+    // Supabase client (server-side)
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -26,12 +27,13 @@ export async function POST(req) {
       }
     );
 
+    // Extract input text
     const { text } = await req.json();
     if (!text) {
       return Response.json({ error: "Missing text" }, { status: 400 });
     }
 
-    // Verify user session
+    // Check user
     const {
       data: { user },
       error: authError,
@@ -41,12 +43,11 @@ export async function POST(req) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // GROQ client
+    // AI
     const client = new Groq({
       apiKey: process.env.GROQ_API_KEY,
     });
 
-    // 🟢 THE ONLY CORRECT COMPLETION BLOCK (STRICT SUMMARIZER)
     const completion = await client.chat.completions.create({
       model: "llama-3.1-8b-instant",
       messages: [
@@ -62,22 +63,9 @@ OUTPUT RULES:
 4. DO NOT define phrases, explain meanings, interpret idioms literally, or give dictionary-style responses.
 5. DO NOT greet, ask questions, or give advice.
 6. ONLY summarise the user's text as a feeling, intention, or emotional signal.
-
-EXAMPLES:
-User: "Let's get it"
-Output: "You feel energized and ready to begin."
-
-User: "Life feels heavy today"
-Output: "You’re feeling emotionally burdened and low."
-
-User: "I’m excited for tomorrow"
-Output: "You feel hopeful and eager about what's coming."
-
-User: "hello"
-Output: "You are initiating contact and looking to connect."
-`
+          `
         },
-        { role: "user", content: text },
+        { role: "user", content: text }
       ],
     });
 
@@ -85,12 +73,20 @@ Output: "You are initiating contact and looking to connect."
       completion.choices?.[0]?.message?.content?.trim() ||
       "No summary generated.";
 
-    // Save the reflection
-    await supabase.from("reflections").insert({
+    // INSERT INTO THE CORRECT TABLE
+    const { error: insertError } = await supabase.from("ai_insights").insert({
       user_id: user.id,
-      summary,
-      input_text: text,
+      summary: summary,
+      input_text: text
     });
+
+    if (insertError) {
+      console.error("DB Insert Error:", insertError);
+      return Response.json(
+        { error: "Database insert failed", details: insertError.message },
+        { status: 500 }
+      );
+    }
 
     return Response.json({ summary });
   } catch (err) {
