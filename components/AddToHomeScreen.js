@@ -26,7 +26,7 @@ export default function AddToHomeScreen() {
 
     // Capture ANDROID install prompt event
     window.addEventListener("beforeinstallprompt", (e) => {
-      e.preventDefault(); // Prevent default mini-infobar
+      e.preventDefault(); // Prevent the mini-infobar
       setDeferredPrompt(e);
 
       if (!dismissed && !standalone) {
@@ -34,7 +34,7 @@ export default function AddToHomeScreen() {
       }
     });
 
-    // iOS custom popup (no native event)
+    // iOS custom popup
     if (ios && !standalone && !dismissed) {
       setTimeout(() => setVisible(true), 2200);
     }
@@ -45,7 +45,8 @@ export default function AddToHomeScreen() {
     setVisible(false);
   };
 
-  const installAndroid = async () =>:
+  // ✅ FIXED FUNCTION (this was broken)
+  const installAndroid = async () => {
     if (!deferredPrompt) return;
 
     deferredPrompt.prompt();
@@ -68,7 +69,6 @@ export default function AddToHomeScreen() {
       {/* Background blur */}
       <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 animate-fadeIn" />
 
-      {/* Popup card */}
       <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-sm z-50 animate-slideUp">
         <div className="bg-white shadow-2xl rounded-2xl p-5 border border-gray-200 relative">
 
@@ -89,14 +89,14 @@ export default function AddToHomeScreen() {
             Install the app for quicker access and a smoother experience.
           </p>
 
-          {/* PLATFORM TEXT */}
+          {/* iOS Instructions */}
           {isIos && (
             <p className="text-xs text-gray-600 mt-3 text-center">
               Tap <strong>Share → “Add to Home Screen”</strong>.
             </p>
           )}
 
-          {/* ANDROID WITH NATIVE PROMPT AVAILABLE */}
+          {/* Android Native Install */}
           {isAndroid && deferredPrompt && (
             <button
               onClick={installAndroid}
@@ -106,7 +106,7 @@ export default function AddToHomeScreen() {
             </button>
           )}
 
-          {/* ANDROID FALLBACK */}
+          {/* Android fallback */}
           {isAndroid && !deferredPrompt && (
             <p className="text-xs text-gray-600 mt-3 text-center">
               Open your browser menu and tap <strong>“Install App”</strong>.
@@ -122,7 +122,6 @@ export default function AddToHomeScreen() {
         </div>
       </div>
 
-      {/* Animations */}
       <style jsx>{`
         @keyframes slideUp {
           from {
