@@ -1,1 +1,5 @@
-npx shadcn-ui@latest add sonner
+"use client";
+
+import { Toaster } from "sonner";
+
+export { Toaster };
