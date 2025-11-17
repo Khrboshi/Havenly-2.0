@@ -4,19 +4,24 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 export default function CallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
-    async function finish() {
-      await supabase.auth.getSession();
+    async function processCallback() {
+      // This exchanges the redirect code for a real session AND sets the cookies
+      const { error } = await supabase.auth.exchangeCodeForSession(window.location.href);
 
-      setTimeout(() => {
-        router.replace("/dashboard");
-      }, 100);
+      if (error) {
+        console.error("Callback error:", error);
+      }
+
+      router.replace("/dashboard");
     }
 
-    finish();
+    processCallback();
   }, [router]);
 
   return (
