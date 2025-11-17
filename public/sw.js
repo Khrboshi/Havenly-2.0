@@ -1,31 +1,15 @@
-const CACHE_NAME = "havenly-cache-v3"; // bump version to force refresh
-
-self.addEventListener("install", (event) => {
-  self.skipWaiting(); // activate immediately
+// Disable all previous service workers completely
+self.addEventListener("install", () => {
+  self.skipWaiting();
 });
 
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      )
-    )
-  );
-  self.clients.claim(); // take over all pages immediately
-});
-
-// Always fetch newest version, fallback to cache
-self.addEventListener("fetch", (event) => {
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        return response;
-      })
-      .catch(() => caches.match(event.request))
-  );
+self.addEventListener("activate", async () => {
+  // Unregister SW
+  const registrations = await self.registration.unregister();
+  // Delete all caches
+  const keys = await caches.keys();
+  for (const key of keys) {
+    await caches.delete(key);
+  }
+  self.clients.claim();
 });
