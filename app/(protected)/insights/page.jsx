@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { loadInsights } from "@/modules/insights/services";
 import { analyzeJournalEntry, predictMoodTrend } from "@/modules/ai/services";
+
+import { isFeatureAvailable } from "@/modules/premium/services";
+
 import { motion } from "framer-motion";
 import { fadeInUp } from "@/lib/animations";
 
@@ -10,6 +13,7 @@ export default function InsightsPage() {
   const [insights, setInsights] = useState(null);
   const [aiSummary, setAISummary] = useState(null);
   const [aiForecast, setAIForecast] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [aiLoading, setAiLoading] = useState(true);
 
@@ -17,7 +21,7 @@ export default function InsightsPage() {
     async function run() {
       const data = await loadInsights();
 
-      // average mood
+      // Average mood calculation
       const avg =
         data.moodHistory.length > 0
           ? (
@@ -33,26 +37,30 @@ export default function InsightsPage() {
 
       setLoading(false);
 
-      // ---- AI ANALYSIS (SAFE) ----
+      // AI section (premium controlled)
       setAiLoading(true);
 
       try {
-        // AI Journal Summary
-        const combinedJournal = data.recentJournal
-          .map((j) => j.content)
-          .join("\n\n")
-          .slice(0, 1800);
+        // Journal Summary
+        if (isFeatureAvailable("ai_insights")) {
+          const combined = data.recentJournal
+            .map((j) => j.content)
+            .join("\n\n")
+            .slice(0, 1800);
 
-        const summary =
-          combinedJournal.length > 0
-            ? await analyzeJournalEntry(combinedJournal)
-            : null;
+          const summary =
+            combined.length > 0
+              ? await analyzeJournalEntry(combined)
+              : null;
 
-        setAISummary(summary);
+          setAISummary(summary);
+        }
 
-        // AI Mood Forecast
-        const forecast = await predictMoodTrend(data.moodHistory);
-        setAIForecast(forecast);
+        // Trend Forecast
+        if (isFeatureAvailable("ai_forecast")) {
+          const forecast = await predictMoodTrend(data.moodHistory);
+          setAIForecast(forecast);
+        }
       } catch {
         setAISummary(null);
         setAIForecast(null);
@@ -86,48 +94,64 @@ export default function InsightsPage() {
         </p>
       </section>
 
-      {/* Standard Cards */}
+      {/* Standard Insight Cards */}
       <div className="space-y-4">
         <Card label="Average Mood" value={insights.averageMood ?? "–"} />
-        <Card label="Most Recent Mood" value={insights.moodHistory.at(-1)?.score ?? "–"} />
+        <Card
+          label="Most Recent Mood"
+          value={insights.moodHistory.at(-1)?.score ?? "–"}
+        />
         <Card label="Journal Entries" value={insights.journalCount} />
         <Card label="Reflections Answered" value={insights.reflectionCount} />
       </div>
 
-      {/* AI Loading */}
-      {aiLoading && (
-        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-          <p className="text-gray-600 text-sm animate-pulse">Analyzing your data…</p>
-        </div>
-      )}
+      {/* --------------------------- */}
+      {/* AI ANALYSIS (Premium Only)  */}
+      {/* --------------------------- */}
 
-      {/* AI SUMMARY CARD */}
-      {!aiLoading && aiSummary && (
-        <div className="bg-[#E6F4F3] border border-[#0D7A7E]/30 rounded-lg p-4 shadow-sm space-y-2">
-          <p className="font-semibold text-[#0D7A7E]">AI Summary of Your Recent Journaling</p>
-          <p className="text-gray-700 text-sm">{aiSummary.summary}</p>
-
-          <p className="text-sm mt-2">
-            <span className="font-medium text-[#0D7A7E]">Sentiment:</span>{" "}
-            {aiSummary.sentiment}
-          </p>
-
-          {aiSummary.keywords?.length > 0 && (
-            <p className="text-sm">
-              <span className="font-medium text-[#0D7A7E]">Themes:</span>{" "}
-              {aiSummary.keywords.join(", ")}
+      {aiLoading &&
+        (isFeatureAvailable("ai_insights") ||
+          isFeatureAvailable("ai_forecast")) && (
+          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+            <p className="text-gray-600 text-sm animate-pulse">
+              Analyzing your data…
             </p>
-          )}
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* AI FORECAST CARD */}
-      {!aiLoading && aiForecast && (
-        <div className="bg-[#E6F4F3] border border-[#0D7A7E]/30 rounded-lg p-4 shadow-sm space-y-2">
-          <p className="font-semibold text-[#0D7A7E]">AI Mood Trend Prediction</p>
-          <p className="text-gray-700 text-sm">{aiForecast.forecast}</p>
-        </div>
-      )}
+      {/* Premium: AI Journal Summary */}
+      {!aiLoading &&
+        aiSummary &&
+        isFeatureAvailable("ai_insights") && (
+          <div className="bg-[#E6F4F3] border border-[#0D7A7E]/30 rounded-lg p-4 shadow-sm space-y-2">
+            <p className="font-semibold text-[#0D7A7E]">
+              AI Summary of Your Recent Journaling
+            </p>
+            <p className="text-gray-700 text-sm">{aiSummary.summary}</p>
+
+            <p className="text-sm mt-2">
+              <span className="font-medium text-[#0D7A7E]">Sentiment:</span>{" "}
+              {aiSummary.sentiment}
+            </p>
+
+            {aiSummary.keywords?.length > 0 && (
+              <p className="text-sm">
+                <span className="font-medium text-[#0D7A7E]">Themes:</span>{" "}
+                {aiSummary.keywords.join(", ")}
+              </p>
+            )}
+          </div>
+        )}
+
+      {/* Premium: AI Mood Trend Forecast */}
+      {!aiLoading &&
+        aiForecast &&
+        isFeatureAvailable("ai_forecast") && (
+          <div className="bg-[#E6F4F3] border border-[#0D7A7E]/30 rounded-lg p-4 shadow-sm space-y-2">
+            <p className="font-semibold text-[#0D7A7E]">AI Mood Trend Prediction</p>
+            <p className="text-gray-700 text-sm">{aiForecast.forecast}</p>
+          </div>
+        )}
 
       {/* Footer */}
       <div className="text-[#0D7A7E] text-sm p-4 bg-[#E6F4F3] rounded-lg">
