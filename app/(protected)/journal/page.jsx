@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { saveJournal } from "@/modules/journal/services";
 import { motion } from "framer-motion";
 import { fadeInUp } from "@/lib/animations";
 
@@ -10,27 +10,17 @@ export default function JournalPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  async function saveJournal() {
+  async function save() {
     if (!entry.trim()) return;
 
     setSaving(true);
     setSaved(false);
 
-    try {
-      const { error } = await supabase.from("journal").insert({
-        content: entry.trim(),
-        created_at: new Date().toISOString(),
-      });
+    await saveJournal(entry.trim());
 
-      if (error) throw error;
-
-      setSaved(true);
-      setEntry("");
-    } catch (err) {
-      console.error("Journal save error:", err.message);
-    } finally {
-      setSaving(false);
-    }
+    setEntry("");
+    setSaving(false);
+    setSaved(true);
   }
 
   return (
@@ -56,7 +46,7 @@ export default function JournalPage() {
       />
 
       <button
-        onClick={saveJournal}
+        onClick={save}
         disabled={!entry.trim() || saving}
         className={`w-full py-3 text-white rounded-lg transition ${
           !entry.trim() || saving
