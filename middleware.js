@@ -1,41 +1,7 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
 
-export async function middleware(request) {
-  const response = NextResponse.next();
-
-  // Build a Supabase client for middleware
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        get(name) {
-          return request.cookies.get(name)?.value;
-        },
-        set(name, value, options) {
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          });
-        },
-        remove(name, options) {
-          response.cookies.set({
-            name,
-            value: "",
-            ...options,
-            maxAge: 0,
-          });
-        },
-      },
-    }
-  );
-
-  // Load session
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+export function middleware(req) {
+  const url = req.nextUrl.clone();
 
   const protectedRoutes = [
     "/dashboard",
@@ -46,16 +12,22 @@ export async function middleware(request) {
     "/profile",
   ];
 
-  const pathname = request.nextUrl.pathname;
+  const pathname = req.nextUrl.pathname;
 
-  if (
-    protectedRoutes.some((p) => pathname.startsWith(p)) &&
-    !session
-  ) {
-    return NextResponse.redirect(new URL("/auth/login", request.url));
+  const isProtected = protectedRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
+
+  // Read Supabase auth cookie directly
+  const accessToken = req.cookies.get("sb-access-token")?.value;
+
+  // If entering protected route without token → redirect to login
+  if (isProtected && !accessToken) {
+    url.pathname = "/auth/login";
+    return NextResponse.redirect(url);
   }
 
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {
