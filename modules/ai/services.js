@@ -1,10 +1,10 @@
-import { askGroq } from "@/lib/groq";
+import { safeGroq } from "@/lib/groq";
 import { logError } from "@/lib/errors";
 
 /**
  * Analyze a journal entry and return:
- * - sentiment
  * - summary
+ * - sentiment
  * - keywords
  */
 export async function analyzeJournalEntry(text) {
@@ -14,15 +14,16 @@ You are an expert mental health assistant. Analyze the following journal text:
 
 "${text}"
 
-Return a JSON object with:
+Return a JSON object like this:
+
 {
   "summary": "short summary",
   "sentiment": "positive | neutral | negative",
   "keywords": ["keyword1", "keyword2"]
 }
-    `;
+`;
 
-    const response = await askGroq(prompt);
+    const response = await safeGroq(prompt);
 
     try {
       return JSON.parse(response);
@@ -44,7 +45,7 @@ Return a JSON object with:
 }
 
 /**
- * Predict the user's emotional trend from mood history
+ * Predict the user's mood trend using their recent mood history.
  */
 export async function predictMoodTrend(moodHistory) {
   try {
@@ -54,13 +55,14 @@ Analyze the following mood scores:
 
 ${JSON.stringify(moodHistory)}
 
-Return a JSON response:
-{
-  "forecast": "short prediction (1–2 sentences)"
-}
-    `;
+Return a JSON object:
 
-    const response = await askGroq(prompt);
+{
+  "forecast": "1–2 sentence prediction"
+}
+`;
+
+    const response = await safeGroq(prompt);
 
     try {
       return JSON.parse(response);
