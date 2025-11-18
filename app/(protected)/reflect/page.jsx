@@ -1,73 +1,38 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabaseBrowser } from "@/lib/supabase/browser";
 import { toast } from "sonner";
 
 export default function ReflectPage() {
+  const supabase = supabaseBrowser();
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const submitReflection = async () => {
-    if (!text.trim()) {
-      toast.error("Reflection cannot be empty.");
-      return;
-    }
-
+    if (!text) return;
     setSubmitting(true);
 
-    // 1️⃣ Get current user
-    const {
-      data: { user },
-      error: userError
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      toast.error("You must be logged in.");
-      setSubmitting(false);
-      return;
-    }
-
-    // 2️⃣ Save reflection in `reflections` table
-    const { error: reflectError } = await supabase
-      .from("reflections")
-      .insert({
-        user_id: user.id,
-        content: text
-      });
-
-    if (reflectError) {
-      console.error("Reflection Save Error:", reflectError);
-      toast.error("Failed to save reflection.");
-      setSubmitting(false);
-      return;
-    }
-
-    // 3️⃣ Generate AI insight
     const res = await fetch("/api/insights", {
       method: "POST",
-      body: JSON.stringify({ text })
+      body: JSON.stringify({ text }),
     });
 
     const data = await res.json();
 
-    if (!res.ok) {
-      console.error("AI Error:", data.error);
-      toast.error("Reflection saved but failed to generate insight.");
-      setSubmitting(false);
-      setText(""); // Still clear text
-      return;
+    if (res.ok) {
+      toast.success("Reflection saved.");
+      setText("");
+    } else {
+      toast.error(data.error || "Something went wrong.");
     }
 
-    // 4️⃣ Success
-    toast.success("Reflection and insight saved.");
-    setText("");
     setSubmitting(false);
   };
 
   return (
-    <main className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Daily Reflection</h1>
+    <main className="p-6 pb-24">
+      <h1 className="text-2xl font-bold mb-4">New Reflection</h1>
 
       <textarea
         className="w-full border p-4 rounded-xl min-h-[150px]"
@@ -81,7 +46,7 @@ export default function ReflectPage() {
         disabled={submitting}
         className="mt-4 px-6 py-3 rounded-xl bg-black text-white disabled:opacity-50"
       >
-        {submitting ? "Processing…" : "Submit Reflection"}
+        {submitting ? "Saving…" : "Save Reflection"}
       </button>
     </main>
   );
