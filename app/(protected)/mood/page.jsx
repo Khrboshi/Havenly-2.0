@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { saveMood } from "@/modules/mood/services";
 import { motion } from "framer-motion";
 import { fadeInUp } from "@/lib/animations";
 
@@ -18,26 +18,16 @@ export default function MoodPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  async function saveMood() {
+  async function save() {
     if (!selectedMood) return;
 
     setSaving(true);
     setSaved(false);
 
-    try {
-      const { error } = await supabase.from("moods").insert({
-        score: selectedMood,
-        created_at: new Date().toISOString(),
-      });
+    await saveMood(selectedMood);
 
-      if (error) throw error;
-
-      setSaved(true);
-    } catch (err) {
-      console.error("Mood save error:", err.message);
-    } finally {
-      setSaving(false);
-    }
+    setSaving(false);
+    setSaved(true);
   }
 
   return (
@@ -74,7 +64,7 @@ export default function MoodPage() {
       </div>
 
       <button
-        onClick={saveMood}
+        onClick={save}
         disabled={!selectedMood || saving}
         className={`w-full py-3 text-white rounded-lg transition
           ${
