@@ -1,113 +1,87 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { fadeIn } from "@/lib/animations";
-
-import { getDashboardStats } from "@/modules/dashboard/services";
-import { predictMoodTrend } from "@/modules/ai/services";
-
-import { isFeatureAvailable } from "@/modules/premium/services";
-
-import PremiumNudge from "@/components/PremiumNudge";
+import { getUserSession } from "@/lib/session";
+import { redirect } from "next/navigation";
 import DailyNudge from "@/components/DailyNudge";
+import PremiumNudge from "@/components/PremiumNudge";
+import { getUserStats } from "@/modules/data/stats";
+import { getMoodTrend } from "@/modules/ai/actions";
 
-export default function DashboardPage() {
-  const [stats, setStats] = useState(null);
-  const [forecast, setForecast] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [aiLoading, setAiLoading] = useState(true);
+export const dynamic = "force-dynamic";
 
-  useEffect(() => {
-    async function load() {
-      // Load dashboard stats
-      const result = await getDashboardStats();
-      setStats(result);
-      setLoading(false);
+export default async function DashboardPage() {
+  // 1) Get the authenticated session on the server
+  const session = await getUserSession();
 
-      // AI forecast (premium gated)
-      setAiLoading(true);
+  // If no session → redirect to login
+  if (!session?.user) {
+    redirect("/auth/login");
+  }
 
-      try {
-        const ai = await predictMoodTrend(result.recentMoods);
-        setForecast(ai);
-      } catch {
-        setForecast(null);
-      }
+  const userId = session.user.id;
 
-      setAiLoading(false);
-    }
+  // 2) Load user stats safely
+  let stats = {
+    latestMood: null,
+    recentMoods: [],
+    journalCount: 0,
+    reflectionCount: 0,
+  };
 
-    load();
-  }, []);
+  try {
+    const data = await getUserStats(userId);
+    if (data) stats = data;
+  } catch (e) {
+    console.error("Dashboard stats error:", e);
+  }
 
-  if (loading) {
-    return (
-      <div className="py-12 text-center text-gray-600 animate-pulse">
-        Loading dashboard…
-      </div>
-    );
+  // 3) Load mood trend (AI) safely
+  let trend = null;
+  try {
+    trend = await getMoodTrend(userId);
+  } catch (e) {
+    console.error("Trend error:", e);
   }
 
   return (
-    <motion.div
-      variants={fadeIn}
-      initial="hidden"
-      animate="show"
-      className="space-y-6"
-    >
-      <section>
-        <h2 className="text-xl font-semibold text-[#0D7A7E] mb-2">
-          Welcome Back
-        </h2>
-        <p className="text-gray-700 text-sm">
-          Here’s a quick overview of your emotional wellness today.
-        </p>
-      </section>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-semibold text-[#0D7A7E]">Dashboard</h1>
 
-      {/* Standard Dashboard Cards */}
-      <section className="grid grid-cols-2 gap-4">
-        <Card label="Today’s Mood" value={stats.latestMood ?? "–"} />
-        <Card label="Journal Entries" value={stats.journalCount} />
+      <DailyNudge />
 
-        <div className="col-span-2">
-          <Card label="Reflections Answered" value={stats.reflectionCount} />
-        </div>
-      </section>
-
-      <DailyNudge message="Be kind to yourself today. Small steps count too." />
-
-      {/* ----------------------------------------- */}
-      {/* AI FORECAST BLOCK — Premium Controlled    */}
-      {/* ----------------------------------------- */}
-
-      {aiLoading && isFeatureAvailable("ai_forecast") && (
-        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-          <p className="text-gray-600 text-sm animate-pulse">
-            Generating your trend forecast…
-          </p>
-        </div>
-      )}
-
-      {!aiLoading &&
-        forecast &&
-        isFeatureAvailable("ai_forecast") && (
-          <div className="bg-[#E6F4F3] border border-[#0D7A7E]/30 rounded-lg p-4 shadow-sm space-y-2">
-            <p className="font-semibold text-[#0D7A7E]">AI Mood Forecast</p>
-            <p className="text-gray-700 text-sm">{forecast.forecast}</p>
-          </div>
-        )}
-
+      {/* Premium prompt */}
       <PremiumNudge />
-    </motion.div>
-  );
-}
 
-function Card({ label, value }) {
-  return (
-    <div className="bg-white shadow-sm border border-gray-200 p-4 rounded-lg">
-      <p className="text-sm text-gray-500 mb-1">{label}</p>
-      <p className="text-2xl font-bold text-[#0D7A7E]">{value}</p>
+      {/* Mood Summary */}
+      <div className="p-5 bg-white border rounded-xl shadow-sm">
+        <h2 className="text-lg font-semibold mb-2">Your Latest Mood</h2>
+        {stats.latestMood ? (
+          <p className="text-gray-800">
+            Your most recent mood:{" "}
+            <span className="font-bold">{stats.latestMood.mood}</span>
+          </p>
+        ) : (
+          <p className="text-gray-500">No mood entries yet.</p>
+        )}
+      </div>
+
+      {/* Trend Summary */}
+      <div className="p-5 bg-white border rounded-xl shadow-sm">
+        <h2 className="text-lg font-semibold mb-2">Trend Insight</h2>
+        {trend ? (
+          <p className="text-gray-800">{trend.forecast}</p>
+        ) : (
+          <p className="text-gray-500">Not enough data to generate a trend yet.</p>
+        )}
+      </div>
+
+      {/* Activity Summary */}
+      <div className="p-5 bg-white border rounded-xl shadow-sm">
+        <h2 className="text-lg font-semibold mb-3">Your Activity</h2>
+        <ul className="space-y-2 text-gray-700">
+          <li>Journal entries: {stats.journalCount}</li>
+          <li>Reflections: {stats.reflectionCount}</li>
+          <li>Mood logs in last 14 days: {stats.recentMoods.length}</li>
+        </ul>
+      </div>
     </div>
   );
 }
