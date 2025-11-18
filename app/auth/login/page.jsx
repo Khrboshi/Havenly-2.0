@@ -18,19 +18,31 @@ export default function LoginPage() {
     const email = form.get("email");
     const password = form.get("password");
 
+    // 1) Attempt login
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
+    // 2) If login failed, show message
     if (error) {
+      console.error("LOGIN ERROR →", error);
       setErrorMsg(error.message);
       setLoading(false);
       return;
     }
 
-    // Success → force navigation to dashboard
-    router.push("/dashboard");
+    // 3) Force cookie sync by refreshing from server
+    const { data: sessionCheck } = await supabase.auth.getSession();
+
+    if (!sessionCheck.session) {
+      setErrorMsg("Login failed: No session token received.");
+      setLoading(false);
+      return;
+    }
+
+    // 4) Full redirect (busts cache + ensures middleware runs)
+    window.location.href = "/dashboard";
   }
 
   return (
