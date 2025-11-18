@@ -1,10 +1,15 @@
 "use client";
 
+import { isPremiumEnabled } from "@/modules/premium/services";
+
 export default function PremiumNudge() {
+  // If premium is enabled, hide the nudge
+  if (isPremiumEnabled()) return null;
+
   return (
-    <div className="bg-[#E6F4F3] border border-[#0D7A7E]/20 p-4 rounded-lg shadow-sm mt-8">
-      <p className="text-sm text-[#0D7A7E]">
-        Premium features are coming soon — deeper insights, unlimited journaling, and AI-powered emotional analytics.
+    <div className="bg-[#FFF8E6] border border-yellow-300 rounded-lg p-4 shadow-sm mt-8">
+      <p className="text-sm text-yellow-800 font-medium">
+        Unlock AI-powered insights, advanced mood forecasting, and more with Havenly Premium.
       </p>
     </div>
   );
