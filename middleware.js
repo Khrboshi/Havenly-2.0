@@ -1,31 +1,9 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/auth-helpers-nextjs";
 
-export async function middleware(req) {
-  const res = NextResponse.next();
+export function middleware(req) {
+  const url = req.nextUrl.pathname;
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        get(name) {
-          return req.cookies.get(name)?.value;
-        },
-        set(name, value, options) {
-          res.cookies.set(name, value, options);
-        },
-        remove(name, options) {
-          res.cookies.set(name, "", { ...options, maxAge: 0 });
-        },
-      },
-    }
-  );
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
+  // Protected routes
   const protectedRoutes = [
     "/dashboard",
     "/mood",
@@ -35,13 +13,20 @@ export async function middleware(req) {
     "/profile",
   ];
 
-  if (protectedRoutes.some((path) => req.nextUrl.pathname.startsWith(path))) {
-    if (!session) {
-      return NextResponse.redirect(new URL("/auth/login", req.url));
-    }
+  const isProtected = protectedRoutes.some((route) =>
+    url.startsWith(route)
+  );
+
+  // Supabase stores access token inside this cookie:
+  const hasSession = req.cookies.get("sb-access-token");
+
+  // If route is protected and no session → redirect to login
+  if (isProtected && !hasSession) {
+    const loginUrl = new URL("/auth/login", req.url);
+    return NextResponse.redirect(loginUrl);
   }
 
-  return res;
+  return NextResponse.next();
 }
 
 export const config = {
