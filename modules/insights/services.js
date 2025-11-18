@@ -9,6 +9,12 @@ export async function loadInsights(limit = 30) {
       .order("created_at", { ascending: true })
       .limit(limit);
 
+    const { data: journalEntries } = await supabase
+      .from("journal")
+      .select("content, created_at")
+      .order("created_at", { ascending: false })
+      .limit(10); // last 10 for AI
+
     const { count: journalCount } = await supabase
       .from("journal")
       .select("*", { count: "exact", head: true });
@@ -19,8 +25,9 @@ export async function loadInsights(limit = 30) {
 
     return {
       moodHistory: moods || [],
-      journalCount,
-      reflectionCount,
+      journalCount: journalCount || 0,
+      reflectionCount: reflectionCount || 0,
+      recentJournal: journalEntries || [],
     };
   } catch (e) {
     logError("Insights service error", e);
@@ -29,6 +36,7 @@ export async function loadInsights(limit = 30) {
       moodHistory: [],
       journalCount: 0,
       reflectionCount: 0,
+      recentJournal: [],
     };
   }
 }
