@@ -1,22 +1,19 @@
 import { NextResponse } from "next/server";
+import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 
-export function middleware(request) {
-  const protectedPaths = [
-    "/dashboard",
-    "/mood",
-    "/journal",
-    "/reflect",
-    "/insights",
-    "/profile",
-  ];
+export async function middleware(req) {
+  const res = NextResponse.next();
 
-  const pathname = request.nextUrl.pathname;
-  const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
-  const user = request.cookies.get("sb-access-token");
+  // Create the Supabase client with auth helpers
+  const supabase = createMiddlewareClient({ req, res });
 
-  if (isProtected && !user) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
+  // This refreshes the session if needed and applies auth cookies
+  await supabase.auth.getSession();
 
-  return NextResponse.next();
+  return res;
 }
+
+// Protect ALL routes inside /(protected)
+export const config = {
+  matcher: ["/(protected)/(.*)"],
+};
