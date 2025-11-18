@@ -1,27 +1,70 @@
-import { supabase } from "@/lib/supabase";
-import { logError } from "@/lib/errors";
+"use server";
 
+import { supabaseServer } from "@/lib/supabaseServer";
+
+/**
+ * Save reflection entry (server-side, authenticated)
+ */
 export async function saveReflection(content) {
   try {
-    return await supabase.from("reflections").insert({
+    const supabase = await supabaseServer();
+
+    // Retrieve session to get user ID
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return { error: "Not authenticated" };
+    }
+
+    const userId = session.user.id;
+
+    const { error } = await supabase.from("reflections").insert({
+      user_id: userId,
       content,
-      created_at: new Date().toISOString(),
     });
+
+    if (error) {
+      console.error("Save reflection error:", error);
+      return { error };
+    }
+
+    return { success: true };
   } catch (e) {
-    logError("Save reflections error", e);
+    console.error("Unexpected reflection error:", e);
     return { error: e };
   }
 }
 
+/**
+ * Count reflections for the current user
+ */
 export async function getReflectionCount() {
   try {
-    const { count } = await supabase
+    const supabase = await supabaseServer();
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) return 0;
+
+    const userId = session.user.id;
+
+    const { count, error } = await supabase
       .from("reflections")
-      .select("*", { count: "exact", head: true });
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId);
+
+    if (error) {
+      console.error("Reflection count error:", error);
+      return 0;
+    }
 
     return count || 0;
   } catch (e) {
-    logError("Reflection count error", e);
+    console.error("Unexpected reflection count error:", e);
     return 0;
   }
 }
