@@ -1,47 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { motion } from "framer-motion";
+import { fadeIn } from "@/lib/animations";
+import { getDashboardStats } from "@/modules/dashboard/services";
 import PremiumNudge from "@/components/PremiumNudge";
 import DailyNudge from "@/components/DailyNudge";
-import { fadeIn } from "@/lib/animations";
-import { motion } from "framer-motion";
 
 export default function DashboardPage() {
-  const [moodToday, setMoodToday] = useState(null);
-  const [journalCount, setJournalCount] = useState(0);
-  const [reflectCount, setReflectCount] = useState(0);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch basic stats for dashboard
   useEffect(() => {
-    async function loadStats() {
-      try {
-        const { data: moodData } = await supabase
-          .from("moods")
-          .select("score, created_at")
-          .order("created_at", { ascending: false })
-          .limit(1);
-
-        const { count: journalEntries } = await supabase
-          .from("journal")
-          .select("*", { count: "exact", head: true });
-
-        const { count: reflectionEntries } = await supabase
-          .from("reflections")
-          .select("*", { count: "exact", head: true });
-
-        setMoodToday(moodData?.[0]?.score || null);
-        setJournalCount(journalEntries || 0);
-        setReflectCount(reflectionEntries || 0);
-      } catch (e) {
-        console.error("Dashboard load error:", e);
-      }
-
+    async function load() {
+      const response = await getDashboardStats();
+      setStats(response);
       setLoading(false);
     }
 
-    loadStats();
+    load();
   }, []);
 
   if (loading) {
@@ -72,18 +49,22 @@ export default function DashboardPage() {
         <div className="bg-white shadow-sm border border-gray-200 p-4 rounded-lg">
           <p className="text-sm text-gray-500 mb-1">Today’s Mood</p>
           <p className="text-2xl font-bold text-[#0D7A7E]">
-            {moodToday !== null ? moodToday : "–"}
+            {stats.latestMood ?? "–"}
           </p>
         </div>
 
         <div className="bg-white shadow-sm border border-gray-200 p-4 rounded-lg">
           <p className="text-sm text-gray-500 mb-1">Journal Entries</p>
-          <p className="text-2xl font-bold text-[#0D7A7E]">{journalCount}</p>
+          <p className="text-2xl font-bold text-[#0D7A7E]">
+            {stats.journalCount}
+          </p>
         </div>
 
         <div className="bg-white shadow-sm border border-gray-200 p-4 rounded-lg col-span-2">
-          <p className="text-sm text-gray-500 mb-1">Reflection Questions Answered</p>
-          <p className="text-2xl font-bold text-[#0D7A7E]">{reflectCount}</p>
+          <p className="text-sm text-gray-500 mb-1">Reflections Answered</p>
+          <p className="text-2xl font-bold text-[#0D7A7E]">
+            {stats.reflectionCount}
+          </p>
         </div>
       </section>
 
