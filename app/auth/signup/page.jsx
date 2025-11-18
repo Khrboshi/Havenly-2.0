@@ -74,3 +74,5 @@ export default function SignupPage() {
     </main>
   );
 }
+toast.success("Account created!");
+window.location.href = "/auth/passkey";
