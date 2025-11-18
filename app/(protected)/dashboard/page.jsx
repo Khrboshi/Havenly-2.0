@@ -3,8 +3,12 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { fadeIn } from "@/lib/animations";
+
 import { getDashboardStats } from "@/modules/dashboard/services";
 import { predictMoodTrend } from "@/modules/ai/services";
+
+import { isFeatureAvailable } from "@/modules/premium/services";
+
 import PremiumNudge from "@/components/PremiumNudge";
 import DailyNudge from "@/components/DailyNudge";
 
@@ -16,11 +20,12 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function load() {
+      // Load dashboard stats
       const result = await getDashboardStats();
       setStats(result);
       setLoading(false);
 
-      // AI Forecast
+      // AI forecast (premium gated)
       setAiLoading(true);
 
       try {
@@ -60,9 +65,11 @@ export default function DashboardPage() {
         </p>
       </section>
 
+      {/* Standard Dashboard Cards */}
       <section className="grid grid-cols-2 gap-4">
         <Card label="Today’s Mood" value={stats.latestMood ?? "–"} />
         <Card label="Journal Entries" value={stats.journalCount} />
+
         <div className="col-span-2">
           <Card label="Reflections Answered" value={stats.reflectionCount} />
         </div>
@@ -70,21 +77,26 @@ export default function DashboardPage() {
 
       <DailyNudge message="Be kind to yourself today. Small steps count too." />
 
-      {/* AI Forecast */}
-      {!aiLoading && forecast && (
-        <div className="bg-[#E6F4F3] border border-[#0D7A7E]/30 rounded-lg p-4 shadow-sm space-y-2">
-          <p className="font-semibold text-[#0D7A7E]">AI Mood Forecast</p>
-          <p className="text-gray-700 text-sm">{forecast.forecast}</p>
-        </div>
-      )}
+      {/* ----------------------------------------- */}
+      {/* AI FORECAST BLOCK — Premium Controlled    */}
+      {/* ----------------------------------------- */}
 
-      {aiLoading && (
+      {aiLoading && isFeatureAvailable("ai_forecast") && (
         <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
           <p className="text-gray-600 text-sm animate-pulse">
             Generating your trend forecast…
           </p>
         </div>
       )}
+
+      {!aiLoading &&
+        forecast &&
+        isFeatureAvailable("ai_forecast") && (
+          <div className="bg-[#E6F4F3] border border-[#0D7A7E]/30 rounded-lg p-4 shadow-sm space-y-2">
+            <p className="font-semibold text-[#0D7A7E]">AI Mood Forecast</p>
+            <p className="text-gray-700 text-sm">{forecast.forecast}</p>
+          </div>
+        )}
 
       <PremiumNudge />
     </motion.div>
