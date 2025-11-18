@@ -2,8 +2,9 @@ import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function getUserStats(userId) {
   try {
-    const supabase = supabaseServer();
+    const supabase = await supabaseServer();
 
+    // Get latest mood entry
     const { data: latestMood } = await supabase
       .from("moods")
       .select("*")
@@ -12,6 +13,7 @@ export async function getUserStats(userId) {
       .limit(1)
       .single();
 
+    // Get last 14 days moods
     const { data: recentMoods } = await supabase
       .from("moods")
       .select("*")
@@ -22,11 +24,13 @@ export async function getUserStats(userId) {
       )
       .order("created_at", { ascending: false });
 
+    // Get journal count
     const { count: journalCount } = await supabase
       .from("journal")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId);
 
+    // Get reflection count
     const { count: reflectionCount } = await supabase
       .from("reflections")
       .select("*", { count: "exact", head: true })
@@ -40,6 +44,11 @@ export async function getUserStats(userId) {
     };
   } catch (error) {
     console.error("getUserStats error:", error);
-    return null;
+    return {
+      latestMood: null,
+      recentMoods: [],
+      journalCount: 0,
+      reflectionCount: 0,
+    };
   }
 }
