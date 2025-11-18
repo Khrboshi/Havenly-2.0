@@ -3,44 +3,43 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const navItems = [
-  { name: "Dashboard", href: "/dashboard" },
-  { name: "Mood", href: "/mood" },
-  { name: "Journal", href: "/journal" },
-  { name: "Reflect", href: "/reflect" },
-  { name: "Insights", href: "/insights" },
-  { name: "Profile", href: "/profile" },
-];
-
 export default function Header() {
   const pathname = usePathname();
 
-  return (
-    <header className="w-full bg-white border-b border-gray-200">
-      <div className="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
-        <Link href="/dashboard">
-          <h1 className="text-xl font-semibold text-[#0D7A7E] tracking-tight">
-            Havenly
-          </h1>
-        </Link>
+  const links = [
+    { href: "/dashboard", label: "Dashboard" },
+    { href: "/mood", label: "Mood" },
+    { href: "/journal", label: "Journal" },
+    { href: "/reflect", label: "Reflect" },
+    { href: "/insights", label: "Insights" },
+    { href: "/profile", label: "Profile" },
+  ];
 
-        <nav className="flex gap-4 text-sm font-medium text-gray-600">
-          {navItems.map((item) => {
-            const active = pathname === item.href;
+  return (
+    <header className="w-full border-b bg-white border-gray-200 py-3 px-5">
+      <nav className="flex items-center justify-between max-w-2xl mx-auto">
+        <h1 className="font-semibold text-[#0D7A7E]">Havenly</h1>
+
+        <ul className="flex gap-4 text-sm">
+          {links.map((link) => {
+            const active = pathname === link.href;
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`hover:text-[#0D7A7E] transition ${
-                  active ? "text-[#0D7A7E] font-semibold" : ""
-                }`}
-              >
-                {item.name}
-              </Link>
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className={`transition ${
+                    active
+                      ? "text-[#0D7A7E] font-medium"
+                      : "text-gray-600 hover:text-[#0D7A7E]"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              </li>
             );
           })}
-        </nav>
-      </div>
+        </ul>
+      </nav>
     </header>
   );
 }
