@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { saveReflection } from "@/modules/reflect/services";
 import { motion } from "framer-motion";
 import { fadeInUp } from "@/lib/animations";
 
@@ -12,9 +12,7 @@ const questions = [
 ];
 
 export default function ReflectPage() {
-  const [answers, setAnswers] = useState(
-    questions.map(() => "") // one answer per question
-  );
+  const [answers, setAnswers] = useState(questions.map(() => ""));
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -24,29 +22,18 @@ export default function ReflectPage() {
     setAnswers(updated);
   }
 
-  async function saveReflection() {
+  async function submit() {
     const combined = answers.filter((a) => a.trim()).join("\n\n");
-
     if (!combined.trim()) return;
 
     setSaving(true);
     setSaved(false);
 
-    try {
-      const { error } = await supabase.from("reflections").insert({
-        content: combined,
-        created_at: new Date().toISOString(),
-      });
+    await saveReflection(combined);
 
-      if (error) throw error;
-
-      setSaved(true);
-      setAnswers(questions.map(() => ""));
-    } catch (err) {
-      console.error("Reflection save error:", err.message);
-    } finally {
-      setSaving(false);
-    }
+    setSaving(false);
+    setSaved(true);
+    setAnswers(questions.map(() => ""));
   }
 
   return (
@@ -69,7 +56,7 @@ export default function ReflectPage() {
             key={i}
             className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
           >
-            <p classname="text-gray-700 text-sm font-medium mb-2">{q}</p>
+            <p className="text-gray-700 text-sm font-medium mb-2">{q}</p>
             <textarea
               rows={3}
               value={answers[i]}
@@ -82,7 +69,7 @@ export default function ReflectPage() {
       </div>
 
       <button
-        onClick={saveReflection}
+        onClick={submit}
         disabled={saving}
         className={`w-full py-3 text-white rounded-lg transition ${
           saving
