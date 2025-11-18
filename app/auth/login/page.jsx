@@ -2,18 +2,26 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { supabase } from "../../../lib/supabase";
+import { supabaseBrowser } from "@/lib/supabase/browser";
+import { loginWithPasskey } from "@/lib/webauthn";
+import { toast } from "sonner";
 
 export default function LoginPage() {
+  const supabase = supabaseBrowser();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [loadingPasskey, setLoadingPasskey] = useState(false);
 
-  const handleLogin = async (e) => {
+  // ----------------------------------
+  // Standard email/password login
+  // ----------------------------------
+  async function handleLogin(e) {
     e.preventDefault();
     setErrorMsg("");
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
       options: {
@@ -26,9 +34,24 @@ export default function LoginPage() {
       return;
     }
 
-    // Supabase will set the auth cookies AFTER callback
     window.location.href = "/auth/callback";
-  };
+  }
+
+  // ----------------------------------
+  // FaceID / TouchID Login
+  // ----------------------------------
+  async function handlePasskey() {
+    try {
+      setLoadingPasskey(true);
+      await loginWithPasskey();
+      toast.success("Logged in with FaceID / TouchID");
+      window.location.href = "/dashboard";
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setLoadingPasskey(false);
+    }
+  }
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
@@ -36,9 +59,7 @@ export default function LoginPage() {
 
       <form onSubmit={handleLogin} className="w-full max-w-sm flex flex-col gap-4">
 
-        {errorMsg && (
-          <p className="text-red-600 text-sm">{errorMsg}</p>
-        )}
+        {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
 
         <input
           type="email"
@@ -62,54 +83,20 @@ export default function LoginPage() {
           Log in
         </button>
 
-        <Link href="/auth/signup" className="text-slate-500 text-sm">
+        <button
+          type="button"
+          onClick={handlePasskey}
+          disabled={loadingPasskey}
+          className="w-full py-3 bg-[#0D7A7E] text-white rounded-xl mt-2"
+        >
+          {loadingPasskey ? "Processing…" : "Login with FaceID / TouchID"}
+        </button>
+
+        <Link href="/auth/signup" className="text-slate-500 text-sm mt-3">
           Create an account
         </Link>
+
       </form>
-    </main>
-  );
-}
-"use client";
-import { useState } from "react";
-import { supabaseBrowser } from "@/lib/supabase/browser";
-import { loginWithPasskey } from "@/lib/webauthn";
-import { toast } from "sonner";
-import Link from "next/link";
-
-export default function LoginPage() {
-  const supabase = supabaseBrowser();
-  const [loading, setLoading] = useState(false);
-
-  async function handlePasskey() {
-    try {
-      setLoading(true);
-      await loginWithPasskey();
-      toast.success("Logged in with FaceID / TouchID");
-      window.location.href = "/dashboard";
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <main className="p-6 max-w-md mx-auto text-center space-y-6">
-      <h1 className="text-3xl font-bold">Welcome Back</h1>
-
-      {/* email/password UI stays the same */}
-
-      <button
-        onClick={handlePasskey}
-        disabled={loading}
-        className="w-full py-3 bg-black text-white rounded-xl mt-6"
-      >
-        {loading ? "Processing…" : "Login with FaceID / TouchID"}
-      </button>
-
-      <p className="text-sm text-slate-500 mt-4">
-        New? <Link href="/auth/signup">Create account</Link>
-      </p>
     </main>
   );
 }
