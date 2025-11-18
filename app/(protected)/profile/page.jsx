@@ -2,37 +2,30 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { getUserProfile, logoutUser } from "@/modules/profile/services";
 import { motion } from "framer-motion";
 import { fadeInUp } from "@/lib/animations";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [userEmail, setUserEmail] = useState(null);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    async function loadUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      setUserEmail(user?.email || null);
+    async function load() {
+      const u = await getUserProfile();
+      setUser(u);
     }
 
-    loadUser();
+    load();
   }, []);
 
   async function logout() {
-    try {
-      await supabase.auth.signOut();
+    const ok = await logoutUser();
 
-      // Clear cookies manually to prevent ghost sessions
+    if (ok) {
       document.cookie = "sb-access-token=; Max-Age=0; path=/;";
       document.cookie = "sb-refresh-token=; Max-Age=0; path=/;";
-
       router.push("/");
-    } catch (err) {
-      console.error("Logout error:", err.message);
     }
   }
 
@@ -53,7 +46,7 @@ export default function ProfilePage() {
       <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
         <p className="text-gray-600 text-sm mb-1">Email</p>
         <p className="text-[#0D7A7E] font-medium">
-          {userEmail || "loading…"}
+          {user?.email ?? "loading…"}
         </p>
       </div>
 
