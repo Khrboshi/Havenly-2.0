@@ -1,19 +1,56 @@
 import { NextResponse } from "next/server";
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@supabase/auth-helpers-nextjs";
 
 export async function middleware(req) {
   const res = NextResponse.next();
 
-  // Create the Supabase client with auth helpers
-  const supabase = createMiddlewareClient({ req, res });
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get(name) {
+          return req.cookies.get(name)?.value;
+        },
+        set(name, value, options) {
+          res.cookies.set(name, value, options);
+        },
+        remove(name, options) {
+          res.cookies.set(name, "", { ...options, maxAge: 0 });
+        },
+      },
+    }
+  );
 
-  // This refreshes the session if needed and applies auth cookies
-  await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const protectedRoutes = [
+    "/dashboard",
+    "/mood",
+    "/journal",
+    "/reflect",
+    "/insights",
+    "/profile",
+  ];
+
+  if (protectedRoutes.some((path) => req.nextUrl.pathname.startsWith(path))) {
+    if (!session) {
+      return NextResponse.redirect(new URL("/auth/login", req.url));
+    }
+  }
 
   return res;
 }
 
-// Protect ALL routes inside /(protected)
 export const config = {
-  matcher: ["/(protected)/(.*)"],
+  matcher: [
+    "/dashboard/:path*",
+    "/mood/:path*",
+    "/journal/:path*",
+    "/reflect/:path*",
+    "/insights/:path*",
+    "/profile/:path*",
+  ],
 };
