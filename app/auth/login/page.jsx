@@ -69,3 +69,47 @@ export default function LoginPage() {
     </main>
   );
 }
+"use client";
+import { useState } from "react";
+import { supabaseBrowser } from "@/lib/supabase/browser";
+import { loginWithPasskey } from "@/lib/webauthn";
+import { toast } from "sonner";
+import Link from "next/link";
+
+export default function LoginPage() {
+  const supabase = supabaseBrowser();
+  const [loading, setLoading] = useState(false);
+
+  async function handlePasskey() {
+    try {
+      setLoading(true);
+      await loginWithPasskey();
+      toast.success("Logged in with FaceID / TouchID");
+      window.location.href = "/dashboard";
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <main className="p-6 max-w-md mx-auto text-center space-y-6">
+      <h1 className="text-3xl font-bold">Welcome Back</h1>
+
+      {/* email/password UI stays the same */}
+
+      <button
+        onClick={handlePasskey}
+        disabled={loading}
+        className="w-full py-3 bg-black text-white rounded-xl mt-6"
+      >
+        {loading ? "Processing…" : "Login with FaceID / TouchID"}
+      </button>
+
+      <p className="text-sm text-slate-500 mt-4">
+        New? <Link href="/auth/signup">Create account</Link>
+      </p>
+    </main>
+  );
+}
