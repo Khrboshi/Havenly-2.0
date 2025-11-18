@@ -2,41 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global reset */
 html, body {
-  height: 100%;
-  background-color: #fafafa;
-  -webkit-tap-highlight-color: transparent;
+  padding: 0;
+  margin: 0;
 }
 
-:root {
-  --radius: 1rem;
-}
-
-/* iOS safe-area support */
-.pt-safe {
-  padding-top: env(safe-area-inset-top);
-}
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* Smooth transitions everywhere */
+/* Smooth transitions across the app */
 * {
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: all 0.15s ease-in-out;
 }
 
-/* Fade-in animation for the PWA popup */
-@keyframes fadeIn {
-  from { 
-    opacity: 0; 
-    transform: translateY(10px); 
-  }
-  to { 
-    opacity: 1; 
-    transform: translateY(0px); 
-  }
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
 }
 
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out forwards;
+::-webkit-scrollbar-thumb {
+  background: #0D7A7E;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #E6F4F3;
 }
