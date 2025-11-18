@@ -15,6 +15,7 @@ export default function ReflectPage() {
   const [answers, setAnswers] = useState(questions.map(() => ""));
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
 
   function updateAnswer(index, value) {
     const updated = [...answers];
@@ -28,11 +29,20 @@ export default function ReflectPage() {
 
     setSaving(true);
     setSaved(false);
+    setError("");
 
-    await saveReflection(combined);
+    const response = await saveReflection(combined);
+
+    if (response?.error) {
+      setError("Unable to save your reflections. Please try again.");
+      setSaving(false);
+      return;
+    }
 
     setSaving(false);
     setSaved(true);
+
+    // Reset fields
     setAnswers(questions.map(() => ""));
   }
 
@@ -81,9 +91,13 @@ export default function ReflectPage() {
       </button>
 
       {saved && (
-        <p className="text-green-600 text-center text-sm">
+        <p className="text-green-600 text-center text-sm mt-3">
           Your reflections have been saved.
         </p>
+      )}
+
+      {error && (
+        <p className="text-red-600 text-center text-sm mt-3">{error}</p>
       )}
     </motion.div>
   );
