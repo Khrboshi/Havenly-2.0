@@ -5,15 +5,27 @@ import { safeGroq } from "@/lib/groq";
 
 /**
  * Generate a mood trend forecast using recent user mood data.
+ * Auto-detects the authenticated user (no userId argument needed).
  */
-export async function getMoodTrend(userId) {
+export async function getMoodTrend() {
   try {
     const supabase = await supabaseServer();
 
-    // Load all moods in chronological order
+    // Load authenticated session
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return { forecast: "Please log in to view your emotional trend." };
+    }
+
+    const userId = session.user.id;
+
+    // Load user's full mood history (oldest → newest)
     const { data: moods, error } = await supabase
       .from("moods")
-      .select("*")
+      .select("score, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: true });
 
@@ -23,34 +35,43 @@ export async function getMoodTrend(userId) {
     }
 
     if (!moods || moods.length < 2) {
-      return { forecast: "Not enough mood data to generate a trend yet." };
+      return {
+        forecast: "Not enough mood data yet. Try logging your mood for a few days.",
+      };
     }
 
-    // AI prompt to analyze the mood pattern
+    // Cleaned prompt for Groq
     const prompt = `
-You are an AI wellbeing assistant.
+You are a compassionate AI wellbeing analyst.
 
-Analyze this user's mood history and give a short emotional trend summary.
-Be accurate, warm, and supportive.
+Analyze the user's mood history and identify their emotional trend.
+Base this exclusively on the numerical mood scores (1=low, 5=high).
 
-Mood Entries:
-${JSON.stringify(moods)}
+Mood entries (oldest → newest):
+${JSON.stringify(moods, null, 2)}
 
-Respond in JSON ONLY:
+Respond in *valid JSON ONLY* using this format:
+
 {
-  "forecast": "Short prediction or insight"
+  "forecast": "A short, warm emotional insight (1–2 sentences)."
 }
     `;
 
     const response = await safeGroq(prompt);
 
+    let parsed;
     try {
-      const parsed = JSON.parse(response);
-      return parsed;
+      parsed = JSON.parse(response);
     } catch (e) {
-      console.error("JSON parse error:", e);
+      console.error("AI JSON parse error:", e, "Raw:", response);
       return { forecast: "Unable to interpret emotional trend." };
     }
+
+    if (!parsed.forecast) {
+      return { forecast: "No emotional trend available." };
+    }
+
+    return parsed;
   } catch (e) {
     console.error("Trend generation error:", e);
     return { forecast: "Trend unavailable due to an internal error." };
