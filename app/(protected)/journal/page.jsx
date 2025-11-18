@@ -1,35 +1,77 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { supabaseBrowser } from "@/lib/supabase/browser";
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { motion } from "framer-motion";
+import { fadeInUp } from "@/lib/animations";
 
 export default function JournalPage() {
-  const supabase = supabaseBrowser();
-  const [entries, setEntries] = useState([]);
+  const [entry, setEntry] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  useEffect(() => {
-    async function load() {
-      const { data } = await supabase.from("journal").select("*").order("created_at", { ascending: false });
-      setEntries(data || []);
+  async function saveJournal() {
+    if (!entry.trim()) return;
+
+    setSaving(true);
+    setSaved(false);
+
+    try {
+      const { error } = await supabase.from("journal").insert({
+        content: entry.trim(),
+        created_at: new Date().toISOString(),
+      });
+
+      if (error) throw error;
+
+      setSaved(true);
+      setEntry("");
+    } catch (err) {
+      console.error("Journal save error:", err.message);
+    } finally {
+      setSaving(false);
     }
-    load();
-  }, [supabase]);
+  }
 
   return (
-    <main className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Journal</h1>
+    <motion.div
+      variants={fadeInUp}
+      initial="hidden"
+      animate="show"
+      className="space-y-6"
+    >
+      <section>
+        <h2 className="text-xl font-semibold text-[#0D7A7E]">Journal</h2>
+        <p className="text-gray-600 text-sm mt-1">
+          Write your thoughts, feelings, or anything on your mind.
+        </p>
+      </section>
 
-      {entries.length === 0 && (
-        <p className="text-slate-500 text-sm">No entries yet.</p>
+      <textarea
+        value={entry}
+        onChange={(e) => setEntry(e.target.value)}
+        placeholder="Start writing here..."
+        rows={6}
+        className="w-full p-4 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0D7A7E] transition"
+      />
+
+      <button
+        onClick={saveJournal}
+        disabled={!entry.trim() || saving}
+        className={`w-full py-3 text-white rounded-lg transition ${
+          !entry.trim() || saving
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-[#0D7A7E] hover:bg-[#096064]"
+        }`}
+      >
+        {saving ? "Saving…" : "Save Entry"}
+      </button>
+
+      {saved && (
+        <p className="text-green-600 text-center text-sm mt-3">
+          Your journal entry has been saved.
+        </p>
       )}
-
-      <ul className="space-y-3">
-        {entries.map((item) => (
-          <li key={item.id} className="p-4 border rounded-xl">
-            <p className="text-sm text-slate-600">{item.entry}</p>
-          </li>
-        ))}
-      </ul>
-    </main>
+    </motion.div>
   );
 }
