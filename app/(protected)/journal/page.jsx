@@ -9,18 +9,26 @@ export default function JournalPage() {
   const [entry, setEntry] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
 
   async function save() {
     if (!entry.trim()) return;
 
     setSaving(true);
     setSaved(false);
+    setError("");
 
-    await saveJournal(entry.trim());
+    try {
+      const success = await saveJournal(entry.trim());
+      if (!success) throw new Error("Failed to save entry.");
 
-    setEntry("");
-    setSaving(false);
-    setSaved(true);
+      setEntry("");
+      setSaved(true);
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -42,7 +50,8 @@ export default function JournalPage() {
         onChange={(e) => setEntry(e.target.value)}
         placeholder="Start writing here..."
         rows={6}
-        className="w-full p-4 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0D7A7E] transition"
+        className="w-full p-4 rounded-lg border border-gray-300 shadow-sm
+                   focus:outline-none focus:ring-2 focus:ring-[#0D7A7E] transition"
       />
 
       <button
@@ -61,6 +70,10 @@ export default function JournalPage() {
         <p className="text-green-600 text-center text-sm mt-3">
           Your journal entry has been saved.
         </p>
+      )}
+
+      {error && (
+        <p className="text-red-600 text-center text-sm mt-3">{error}</p>
       )}
     </motion.div>
   );
