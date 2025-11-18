@@ -1,22 +1,33 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@supabase/ssr";
 
-export async function middleware(req) {
-  const res = NextResponse.next({
-    request: { headers: req.headers },
-  });
+export async function middleware(request) {
+  const response = NextResponse.next();
 
-  // Create authenticated supabase client
+  // Build a Supabase client for middleware
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
-        get: (name) => req.cookies.get(name)?.value,
-        set: (name, value, options) =>
-          res.cookies.set(name, value, options),
-        remove: (name, options) =>
-          res.cookies.set(name, "", { ...options, maxAge: 0 }),
+        get(name) {
+          return request.cookies.get(name)?.value;
+        },
+        set(name, value, options) {
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+        },
+        remove(name, options) {
+          response.cookies.set({
+            name,
+            value: "",
+            ...options,
+            maxAge: 0,
+          });
+        },
       },
     }
   );
@@ -25,8 +36,6 @@ export async function middleware(req) {
   const {
     data: { session },
   } = await supabase.auth.getSession();
-
-  const pathname = req.nextUrl.pathname;
 
   const protectedRoutes = [
     "/dashboard",
@@ -37,16 +46,16 @@ export async function middleware(req) {
     "/profile",
   ];
 
-  // Redirect unauthenticated users
+  const pathname = request.nextUrl.pathname;
+
   if (
-    protectedRoutes.some((route) => pathname.startsWith(route)) &&
+    protectedRoutes.some((p) => pathname.startsWith(p)) &&
     !session
   ) {
-    return NextResponse.redirect(new URL("/auth/login", req.url));
+    return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
-  // Allow access
-  return res;
+  return response;
 }
 
 export const config = {
