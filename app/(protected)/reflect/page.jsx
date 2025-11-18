@@ -1,53 +1,103 @@
 "use client";
 
 import { useState } from "react";
-import { supabaseBrowser } from "@/lib/supabase/browser";
-import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+import { motion } from "framer-motion";
+import { fadeInUp } from "@/lib/animations";
+
+const questions = [
+  "What is one thing you are grateful for today?",
+  "What challenged you today?",
+  "What is one thing you could do tomorrow to feel better?",
+];
 
 export default function ReflectPage() {
-  const supabase = supabaseBrowser();
-  const [text, setText] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [answers, setAnswers] = useState(
+    questions.map(() => "") // one answer per question
+  );
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  const submitReflection = async () => {
-    if (!text) return;
-    setSubmitting(true);
+  function updateAnswer(index, value) {
+    const updated = [...answers];
+    updated[index] = value;
+    setAnswers(updated);
+  }
 
-    const res = await fetch("/api/insights", {
-      method: "POST",
-      body: JSON.stringify({ text }),
-    });
+  async function saveReflection() {
+    const combined = answers.filter((a) => a.trim()).join("\n\n");
 
-    const data = await res.json();
+    if (!combined.trim()) return;
 
-    if (res.ok) {
-      toast.success("Reflection saved.");
-      setText("");
-    } else {
-      toast.error(data.error || "Something went wrong.");
+    setSaving(true);
+    setSaved(false);
+
+    try {
+      const { error } = await supabase.from("reflections").insert({
+        content: combined,
+        created_at: new Date().toISOString(),
+      });
+
+      if (error) throw error;
+
+      setSaved(true);
+      setAnswers(questions.map(() => ""));
+    } catch (err) {
+      console.error("Reflection save error:", err.message);
+    } finally {
+      setSaving(false);
     }
-
-    setSubmitting(false);
-  };
+  }
 
   return (
-    <main className="p-6 pb-24">
-      <h1 className="text-2xl font-bold mb-4">New Reflection</h1>
+    <motion.div
+      variants={fadeInUp}
+      initial="hidden"
+      animate="show"
+      className="space-y-6"
+    >
+      <section>
+        <h2 className="text-xl font-semibold text-[#0D7A7E]">Reflect</h2>
+        <p className="text-gray-600 text-sm mt-1">
+          Take a moment to reflect on your day.
+        </p>
+      </section>
 
-      <textarea
-        className="w-full border p-4 rounded-xl min-h-[150px]"
-        placeholder="Write your thoughts…"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-      />
+      <div className="space-y-4">
+        {questions.map((q, i) => (
+          <div
+            key={i}
+            className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
+          >
+            <p classname="text-gray-700 text-sm font-medium mb-2">{q}</p>
+            <textarea
+              rows={3}
+              value={answers[i]}
+              onChange={(e) => updateAnswer(i, e.target.value)}
+              placeholder="Write your thoughts here…"
+              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0D7A7E]"
+            />
+          </div>
+        ))}
+      </div>
 
       <button
-        onClick={submitReflection}
-        disabled={submitting}
-        className="mt-4 px-6 py-3 rounded-xl bg-black text-white disabled:opacity-50"
+        onClick={saveReflection}
+        disabled={saving}
+        className={`w-full py-3 text-white rounded-lg transition ${
+          saving
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-[#0D7A7E] hover:bg-[#096064]"
+        }`}
       >
-        {submitting ? "Saving…" : "Save Reflection"}
+        {saving ? "Saving…" : "Save Reflections"}
       </button>
-    </main>
+
+      {saved && (
+        <p className="text-green-600 text-center text-sm">
+          Your reflections have been saved.
+        </p>
+      )}
+    </motion.div>
   );
 }
