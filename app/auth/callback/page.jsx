@@ -1,32 +1,22 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "../../../lib/supabase";
+import { supabaseBrowser } from "@/lib/supabase/browser";
 
-export const dynamic = "force-dynamic";
-
-export default function CallbackPage() {
-  const router = useRouter();
+export default function AuthCallback() {
+  const supabase = supabaseBrowser();
 
   useEffect(() => {
-    async function processCallback() {
-      // This exchanges the redirect code for a real session AND sets the cookies
-      const { error } = await supabase.auth.exchangeCodeForSession(window.location.href);
-
-      if (error) {
-        console.error("Callback error:", error);
-      }
-
-      router.replace("/dashboard");
+    async function handleCallback() {
+      await supabase.auth.getSession();
+      window.location.href = "/dashboard";
     }
-
-    processCallback();
-  }, [router]);
+    handleCallback();
+  }, [supabase]);
 
   return (
-    <div className="w-full h-screen flex items-center justify-center text-gray-600">
-      Completing sign in…
+    <div className="w-full h-screen flex items-center justify-center">
+      Completing login…
     </div>
   );
 }
