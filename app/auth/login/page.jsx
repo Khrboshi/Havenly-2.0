@@ -93,3 +93,48 @@ export default function LoginPage() {
     </main>
   );
 }
+"use client";
+
+import { useState } from "react";
+import { loginWithPasskey } from "@/lib/webauthn";
+import { toast } from "sonner";
+
+export default function LoginPage() {
+  const [email, setEmail] = useState("");
+
+  async function handlePasskey() {
+    try {
+      const result = await loginWithPasskey(email);
+
+      if (result.success) {
+        toast.success("Logged in with FaceID / TouchID");
+        window.location.href = "/dashboard";
+      } else {
+        toast.error(result.error || "Failed to login");
+      }
+    } catch (err) {
+      toast.error("Biometric login failed. Try manual login.");
+    }
+  }
+
+  return (
+    <div className="p-6">
+      {/* Email input */}
+      <input
+        className="w-full border p-3 rounded mb-3"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+
+      {/* Normal login button here... */}
+
+      <button
+        onClick={handlePasskey}
+        className="w-full bg-teal-600 text-white p-3 rounded mt-4"
+      >
+        Login with FaceID / TouchID
+      </button>
+    </div>
+  );
+}
