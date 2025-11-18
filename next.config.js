@@ -1,18 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    optimizePackageImports: ["lucide-react"],
+    serverActions: true
   },
-  async headers() {
-    return [
-      {
-        source: "/manifest.json",
-        headers: [
-          { key: "Content-Type", value: "application/manifest+json" }
-        ]
-      }
-    ];
+  images: {
+    domains: []
   }
 };
 
-module.exports = nextConfig;
+const withPWA = require("next-pwa")({
+  dest: "public",
+  disable: process.env.NODE_ENV === "development"
+});
+
+module.exports = withPWA(nextConfig);
