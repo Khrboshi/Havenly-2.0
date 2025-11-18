@@ -1,24 +1,24 @@
-"use client";
+import { supabaseServer } from "@/lib/supabaseServer";
+import { redirect } from "next/navigation";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import PageLoader from "@/components/PageLoader";
+export default async function ProtectedLayout({ children }) {
+  // Get Supabase client
+  const supabase = await supabaseServer();
 
-export default function ProtectedLayout({ children }) {
-  const router = useRouter();
-  const [allowed, setAllowed] = useState(false);
+  // Load session on the server
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  useEffect(() => {
-    const token = document.cookie.includes("sb-access-token");
+  // If no session → redirect to login
+  if (!session) {
+    redirect("/auth/login");
+  }
 
-    if (!token) {
-      router.push("/");
-    } else {
-      setAllowed(true);
-    }
-  }, [router]);
-
-  if (!allowed) return <PageLoader />;
-
-  return <>{children}</>;
+  // If user is authenticated → render protected content
+  return (
+    <div className="min-h-screen w-full">
+      {children}
+    </div>
+  );
 }
