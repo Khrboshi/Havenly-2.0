@@ -1,43 +1,24 @@
-// app/(protected)/layout.jsx
+"use client";
 
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { createServerClient } from "@supabase/ssr";
-import BottomNav from "@/components/BottomNav";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import PageLoader from "@/components/PageLoader";
 
-export default async function ProtectedLayout({ children }) {
-  const cookieStore = cookies();
+export default function ProtectedLayout({ children }) {
+  const router = useRouter();
+  const [allowed, setAllowed] = useState(false);
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
-        },
-      },
+  useEffect(() => {
+    const token = document.cookie.includes("sb-access-token");
+
+    if (!token) {
+      router.push("/");
+    } else {
+      setAllowed(true);
     }
-  );
+  }, [router]);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  if (!allowed) return <PageLoader />;
 
-  // Not logged in → Redirect to login
-  if (!user) {
-    redirect("/auth/login");
-  }
-
-  return (
-    <div className="pb-20">
-      {children}
-      <BottomNav />
-    </div>
-  );
+  return <>{children}</>;
 }
