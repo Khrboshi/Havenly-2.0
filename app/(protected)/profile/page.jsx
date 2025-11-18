@@ -1,36 +1,75 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { supabaseBrowser } from "@/lib/supabase/browser";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { motion } from "framer-motion";
+import { fadeInUp } from "@/lib/animations";
 
 export default function ProfilePage() {
-  const supabase = supabaseBrowser();
   const router = useRouter();
+  const [userEmail, setUserEmail] = useState(null);
+
+  useEffect(() => {
+    async function loadUser() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      setUserEmail(user?.email || null);
+    }
+
+    loadUser();
+  }, []);
 
   async function logout() {
-    await supabase.auth.signOut();
-    router.push("/");
+    try {
+      await supabase.auth.signOut();
+
+      // Clear cookies manually to prevent ghost sessions
+      document.cookie = "sb-access-token=; Max-Age=0; path=/;";
+      document.cookie = "sb-refresh-token=; Max-Age=0; path=/;";
+
+      router.push("/");
+    } catch (err) {
+      console.error("Logout error:", err.message);
+    }
   }
 
   return (
-    <main className="p-6 pb-24 text-center">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.7 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="mx-auto w-28 h-28 rounded-full bg-gradient-to-br from-teal-400 to-teal-700 flex items-center justify-center text-white text-4xl font-semibold shadow-lg"
-      >
-        😊
-      </motion.div>
+    <motion.div
+      variants={fadeInUp}
+      initial="hidden"
+      animate="show"
+      className="space-y-6"
+    >
+      <section>
+        <h2 className="text-xl font-semibold text-[#0D7A7E]">Profile</h2>
+        <p className="text-gray-600 text-sm mt-1">
+          Manage your account and settings.
+        </p>
+      </section>
 
-      <h1 className="text-2xl font-bold mt-6 text-[#0D7A7E]">Your Profile</h1>
+      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+        <p className="text-gray-600 text-sm mb-1">Email</p>
+        <p className="text-[#0D7A7E] font-medium">
+          {userEmail || "loading…"}
+        </p>
+      </div>
 
       <button
         onClick={logout}
-        className="mt-6 px-6 py-3 bg-red-500 text-white rounded-xl"
+        className="w-full py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg transition"
       >
         Log Out
       </button>
-    </main>
+
+      <button
+        onClick={() => router.push("/dashboard")}
+        className="w-full py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition"
+      >
+        Back to Dashboard
+      </button>
+    </motion.div>
   );
 }
