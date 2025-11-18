@@ -2,22 +2,18 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { loginWithPasskey } from "@/lib/webauthn";
-import { toast } from "sonner";
 
 export default function LoginPage() {
   const supabase = supabaseBrowser();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [loadingPasskey, setLoadingPasskey] = useState(false);
 
-  // ----------------------------------
-  // Standard email/password login
-  // ----------------------------------
-  async function handleLogin(e) {
+  async function handleEmailLogin(e) {
     e.preventDefault();
     setErrorMsg("");
 
@@ -33,23 +29,19 @@ export default function LoginPage() {
       setErrorMsg(error.message);
       return;
     }
-
     window.location.href = "/auth/callback";
   }
 
-  // ----------------------------------
-  // FaceID / TouchID Login
-  // ----------------------------------
   async function handlePasskey() {
     try {
-      setLoadingPasskey(true);
-      await loginWithPasskey();
+      setLoading(true);
+      await loginWithPasskey(email);
       toast.success("Logged in with FaceID / TouchID");
       window.location.href = "/dashboard";
     } catch (err) {
       toast.error(err.message);
     } finally {
-      setLoadingPasskey(false);
+      setLoading(false);
     }
   }
 
@@ -57,8 +49,10 @@ export default function LoginPage() {
     <main className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
       <h1 className="text-3xl font-semibold mb-6">Log in</h1>
 
-      <form onSubmit={handleLogin} className="w-full max-w-sm flex flex-col gap-4">
-
+      <form
+        onSubmit={handleEmailLogin}
+        className="w-full max-w-sm flex flex-col gap-4"
+      >
         {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
 
         <input
@@ -86,16 +80,15 @@ export default function LoginPage() {
         <button
           type="button"
           onClick={handlePasskey}
-          disabled={loadingPasskey}
-          className="w-full py-3 bg-[#0D7A7E] text-white rounded-xl mt-2"
+          disabled={loading || !email}
+          className="bg-teal-700 text-white py-3 rounded-xl disabled:opacity-50"
         >
-          {loadingPasskey ? "Processing…" : "Login with FaceID / TouchID"}
+          {loading ? "Processing…" : "Login with FaceID / TouchID"}
         </button>
 
-        <Link href="/auth/signup" className="text-slate-500 text-sm mt-3">
+        <Link href="/auth/signup" className="text-slate-500 text-sm">
           Create an account
         </Link>
-
       </form>
     </main>
   );
