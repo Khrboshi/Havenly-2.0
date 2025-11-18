@@ -1,70 +1,82 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { supabaseBrowser } from "@/lib/supabase/browser";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
-  const supabase = supabaseBrowser();
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
 
   async function handleSignup(e) {
     e.preventDefault();
+    setLoading(true);
+    setErrorMsg(null);
 
-    const { error } = await supabase.auth.signUp({
+    const form = new FormData(e.target);
+    const email = form.get("email");
+    const password = form.get("password");
+
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
     });
 
     if (error) {
       setErrorMsg(error.message);
+      setLoading(false);
       return;
     }
 
-    alert("Check your email for confirmation link");
+    // Manual redirect after successful signup
+    if (data.user) {
+      router.push("/dashboard");
+    } else {
+      // In email-confirmation mode
+      router.push("/auth/login?checkEmail=true");
+    }
+
+    setLoading(false);
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
-      <h1 className="text-3xl font-semibold mb-6">Create Account</h1>
+    <div className="max-w-md mx-auto mt-20 p-6 bg-white border border-gray-200 rounded-xl shadow-sm">
+      <h2 className="text-xl font-semibold text-[#0D7A7E] mb-4">Create Account</h2>
 
-      <form onSubmit={handleSignup} className="w-full max-w-sm flex flex-col gap-4">
+      {errorMsg && (
+        <p className="text-red-600 text-sm mb-4">{errorMsg}</p>
+      )}
 
-        {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
+      <form onSubmit={handleSignup} className="space-y-4">
+        <div>
+          <label className="text-sm text-gray-600">Email</label>
+          <input
+            type="email"
+            name="email"
+            required
+            className="w-full mt-1 p-2 border rounded-lg"
+          />
+        </div>
 
-        <input
-          type="email"
-          placeholder="Email"
-          className="border px-4 py-3 rounded-xl w-full"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+        <div>
+          <label className="text-sm text-gray-600">Password</label>
+          <input
+            type="password"
+            name="password"
+            required
+            className="w-full mt-1 p-2 border rounded-lg"
+          />
+        </div>
 
-        <input
-          type="password"
-          placeholder="Password"
-          className="border px-4 py-3 rounded-xl w-full"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-
-        <button className="bg-black text-white py-3 rounded-xl">
-          Sign up
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full p-2 bg-[#0D7A7E] text-white rounded-lg"
+        >
+          {loading ? "Creating account…" : "Sign Up"}
         </button>
-
-        <Link href="/auth/login" className="text-slate-500 text-sm mt-3">
-          Already have an account?
-        </Link>
-
       </form>
-    </main>
+    </div>
   );
 }
