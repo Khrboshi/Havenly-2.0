@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -29,24 +29,15 @@ export default function SignupPage() {
       return;
     }
 
-    // Manual redirect after successful signup
-    if (data.user) {
-      router.push("/dashboard");
-    } else {
-      // In email-confirmation mode
-      router.push("/auth/login?checkEmail=true");
-    }
-
-    setLoading(false);
+    // Success: redirect to dashboard (middleware will detect the new session)
+    router.push("/dashboard");
   }
 
   return (
-    <div className="max-w-md mx-auto mt-20 p-6 bg-white border border-gray-200 rounded-xl shadow-sm">
+    <div className="max-w-md mx-auto mt-20 p-6 bg-white border rounded-xl shadow-sm">
       <h2 className="text-xl font-semibold text-[#0D7A7E] mb-4">Create Account</h2>
 
-      {errorMsg && (
-        <p className="text-red-600 text-sm mb-4">{errorMsg}</p>
-      )}
+      {errorMsg && <p className="text-red-600 mb-4">{errorMsg}</p>}
 
       <form onSubmit={handleSignup} className="space-y-4">
         <div>
