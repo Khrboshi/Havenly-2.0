@@ -1,100 +1,53 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabase/browser";
+import { loginAction } from "./actions";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState(null);
-
-  async function handleLogin(e) {
-    e.preventDefault();
-    setLoading(true);
-    setErrorMsg(null);
-
-    const formData = new FormData(e.currentTarget);
-    const email = String(formData.get("email") || "").trim();
-    const password = String(formData.get("password") || "");
-
-    if (!email || !password) {
-      setErrorMsg("Please enter both email and password.");
-      setLoading(false);
-      return;
-    }
-
-    const supabase = supabaseServer();
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      setErrorMsg(error.message || "Login failed.");
-      setLoading(false);
-      return;
-    }
-
-    const { data } = await supabase.auth.getSession();
-    if (!data?.session) {
-      setErrorMsg("Login failed: no session.");
-      setLoading(false);
-      return;
-    }
-
-    router.replace("/dashboard");
-  }
+  const [error, setError] = useState("");
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-md p-6 bg-white border rounded-xl shadow-sm">
-        <h1 className="text-2xl font-semibold text-[#0D7A7E] mb-2">Welcome Back</h1>
+    <div className="min-h-screen flex items-center justify-center bg-[#F7FBFA] px-6">
+      <form
+        action={async (formData) => {
+          const result = await loginAction(formData);
+          if (result?.error) setError(result.error);
+        }}
+        className="bg-white p-8 rounded-xl shadow-md w-full max-w-sm"
+      >
+        <h1 className="text-2xl font-bold text-teal-700 mb-6">Log In</h1>
 
-        {errorMsg && (
-          <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2">
-            {errorMsg}
-          </p>
+        {error && (
+          <p className="text-red-600 text-sm mb-3">{error}</p>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-sm mb-1">Email</label>
-            <input
-              type="email"
-              name="email"
-              required
-              className="w-full p-2.5 border rounded-lg focus:ring-[#0D7A7E]"
-            />
-          </div>
+        <label className="block mb-3">
+          <span className="text-gray-700">Email</span>
+          <input
+            type="email"
+            name="email"
+            required
+            className="mt-1 w-full border rounded-lg px-3 py-2"
+          />
+        </label>
 
-          <div>
-            <label className="block text-sm mb-1">Password</label>
-            <input
-              type="password"
-              name="password"
-              required
-              className="w-full p-2.5 border rounded-lg focus:ring-[#0D7A7E]"
-            />
-          </div>
+        <label className="block mb-6">
+          <span className="text-gray-700">Password</span>
+          <input
+            type="password"
+            name="password"
+            required
+            className="mt-1 w-full border rounded-lg px-3 py-2"
+          />
+        </label>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 bg-[#0D7A7E] text-white rounded-lg disabled:bg-gray-400"
-          >
-            {loading ? "Logging in…" : "Log In"}
-          </button>
-        </form>
-
-        <p className="mt-4 text-xs text-center">
-          New here?{" "}
-          <a href="/auth/signup" className="text-[#0D7A7E] underline">
-            Create an account
-          </a>
-        </p>
-      </div>
-    </main>
+        <button
+          type="submit"
+          className="w-full py-3 bg-teal-700 text-white rounded-lg hover:bg-teal-800 transition"
+        >
+          Log In
+        </button>
+      </form>
+    </div>
   );
 }
