@@ -31,3 +31,6 @@ export default function BottomNav() {
     </nav>
   );
 }
+className={`w-7 h-7 ${
+  isActive ? "text-brand" : "text-brand-dark opacity-60"
+}`}
