@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+html {
+  font-family: 'Inter', sans-serif;
+  color: #1F2937; /* gray-800 soft text */
+  background: #F7FBFA;
+  scroll-behavior: smooth;
+}
+
 /* Global reset */
 html, body {
   padding: 0;
