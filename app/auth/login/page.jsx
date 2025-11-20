@@ -24,7 +24,7 @@ export default function LoginPage() {
       return;
     }
 
-    const supabase = supabaseBrowser();
+    const supabase = supabaseServer();
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
