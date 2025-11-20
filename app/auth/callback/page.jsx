@@ -8,32 +8,20 @@ export default function AuthCallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
-    async function finalizeAuth() {
+    async function run() {
       try {
         const supabase = supabaseBrowser();
-        // This will read tokens from URL (if present) and sync cookies
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!session) {
-          // No session – go to login
-          router.replace("/auth/login");
-          return;
-        }
-
+        await supabase.auth.getSession();
         router.replace("/dashboard");
-      } catch (err) {
-        console.error("Auth callback error:", err);
+      } catch {
         router.replace("/auth/login");
       }
     }
-
-    finalizeAuth();
+    run();
   }, [router]);
 
   return (
-    <main className="w-full h-screen flex items-center justify-center">
+    <main className="h-screen w-full flex items-center justify-center">
       <p className="text-sm text-slate-600">Completing sign-in…</p>
     </main>
   );
