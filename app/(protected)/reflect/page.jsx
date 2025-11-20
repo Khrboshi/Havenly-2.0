@@ -1,104 +1,135 @@
 "use client";
 
-import { useState } from "react";
-import { saveReflection } from "@/modules/reflect/services";
-import { motion } from "framer-motion";
-import { fadeInUp } from "@/lib/animations";
+import { useState, useEffect } from "react";
 
-const questions = [
-  "What is one thing you are grateful for today?",
-  "What challenged you today?",
-  "What is one thing you could do tomorrow to feel better?",
-];
+/** 
+ * If prompts.json is present in /data/prompts.json,
+ * this fetch will load it automatically.
+ */
+async function loadQuestion() {
+  try {
+    const res = await fetch("/prompts.json");
+    if (!res.ok) return "What is one thing on your mind today?";
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      const randomIndex = Math.floor(Math.random() * data.length);
+      return data[randomIndex];
+    }
+    return "What is something you want to reflect on today?";
+  } catch {
+    return "What is one thing on your mind today?";
+  }
+}
 
 export default function ReflectPage() {
-  const [answers, setAnswers] = useState(questions.map(() => ""));
-  const [saving, setSaving] = useState(false);
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null);
 
-  function updateAnswer(index, value) {
-    const updated = [...answers];
-    updated[index] = value;
-    setAnswers(updated);
-  }
+  // Load question on mount
+  useEffect(() => {
+    async function load() {
+      const q = await loadQuestion();
+      setQuestion(q);
+    }
+    load();
+  }, []);
 
-  async function submit() {
-    const combined = answers.filter((a) => a.trim()).join("\n\n");
-    if (!combined.trim()) return;
-
-    setSaving(true);
-    setSaved(false);
-    setError("");
-
-    const response = await saveReflection(combined);
-
-    if (response?.error) {
-      setError("Unable to save your reflections. Please try again.");
-      setSaving(false);
+  /** Submit reflection */
+  async function submitReflection() {
+    if (!answer.trim()) {
+      setError("Please enter your reflection.");
       return;
     }
 
-    setSaving(false);
-    setSaved(true);
+    setError(null);
+    setLoading(true);
+    setSaved(false);
 
-    // Reset fields
-    setAnswers(questions.map(() => ""));
+    try {
+      const res = await fetch("/api/reflect", {
+        method: "POST",
+        body: JSON.stringify({
+          question,
+          answer: answer.trim(),
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to save reflection.");
+      }
+
+      setSaved(true);
+      setAnswer("");
+    } catch (err) {
+      setError(err.message || "Unable to save reflection.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <motion.div
-      variants={fadeInUp}
-      initial="hidden"
-      animate="show"
-      className="space-y-6"
-    >
+    <div className="space-y-8">
+      
+      {/* Header */}
       <section>
-        <h2 className="text-xl font-semibold text-[#0D7A7E]">Reflect</h2>
-        <p className="text-gray-600 text-sm mt-1">
-          Take a moment to reflect on your day.
+        <h1 className="text-2xl font-bold text-[#0D7A7E]">Reflect</h1>
+        <p className="text-sm text-gray-600 mt-1">
+          Take a moment to process your thoughts.
         </p>
       </section>
 
-      <div className="space-y-4">
-        {questions.map((q, i) => (
-          <div
-            key={i}
-            className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
-          >
-            <p className="text-gray-700 text-sm font-medium mb-2">{q}</p>
-            <textarea
-              rows={3}
-              value={answers[i]}
-              onChange={(e) => updateAnswer(i, e.target.value)}
-              placeholder="Write your thoughts here…"
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0D7A7E]"
-            />
-          </div>
-        ))}
-      </div>
-
-      <button
-        onClick={submit}
-        disabled={saving}
-        className={`w-full py-3 text-white rounded-lg transition ${
-          saving
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-[#0D7A7E] hover:bg-[#096064]"
-        }`}
-      >
-        {saving ? "Saving…" : "Save Reflections"}
-      </button>
-
-      {saved && (
-        <p className="text-green-600 text-center text-sm mt-3">
-          Your reflections have been saved.
+      {/* Question Card */}
+      <section className="bg-white border rounded-xl p-5 shadow-sm">
+        <h3 className="text-sm font-medium text-gray-700">Today's Question</h3>
+        <p className="text-md font-semibold text-gray-800 mt-2 whitespace-pre-line">
+          {question || "Loading question…"}
         </p>
-      )}
+      </section>
 
-      {error && (
-        <p className="text-red-600 text-center text-sm mt-3">{error}</p>
-      )}
-    </motion.div>
+      {/* Form */}
+      <section className="space-y-4">
+        <textarea
+          value={answer}
+          onChange={(e) => setAnswer(e.target.value)}
+          placeholder="Write your reflection here…"
+          rows={6}
+          className="w-full border p-3 rounded-xl focus:ring-[#0D7A7E]"
+        />
+
+        {error && (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2">
+            {error}
+          </p>
+        )}
+
+        {saved && (
+          <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md p-2">
+            Reflection saved successfully!
+          </p>
+        )}
+
+        <button
+          onClick={submitReflection}
+          disabled={loading}
+          className="w-full py-3 bg-[#0D7A7E] text-white rounded-xl font-medium disabled:bg-gray-400"
+        >
+          {loading ? "Saving…" : "Save Reflection"}
+        </button>
+      </section>
+
+      {/* Link to Journal */}
+      <section className="text-center">
+        <a
+          href="/journal"
+          className="text-[#0D7A7E] font-medium underline"
+        >
+          View your past reflections →
+        </a>
+      </section>
+
+    </div>
   );
 }
