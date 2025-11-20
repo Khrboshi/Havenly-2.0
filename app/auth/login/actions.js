@@ -7,7 +7,7 @@ export async function loginAction(formData) {
   const email = formData.get("email");
   const password = formData.get("password");
 
-  const supabase = await supabaseServer();
+  const supabase = supabaseServer(); // no await
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -16,7 +16,7 @@ export async function loginAction(formData) {
 
   if (error) {
     console.error("Login error:", error.message);
-    throw new Error("Invalid login credentials");
+    return { error: "Invalid login credentials" };
   }
 
   redirect("/dashboard");
