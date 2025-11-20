@@ -2,43 +2,33 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-[#F7FBFA] flex flex-col items-center">
+    <main className="min-h-screen bg-brand-bg flex flex-col items-center">
 
       {/* HERO SECTION */}
-      <section className="w-full max-w-3xl text-center px-6 pt-24 pb-16">
-        <h1 className="text-4xl font-extrabold text-[#0D7A7E] leading-tight">
-          Your Daily Space for Reflection, Clarity, and Emotional Wellbeing
+      <section className="text-center py-20 px-6 fade-in w-full max-w-3xl">
+        <h1 className="text-4xl font-semibold text-brand-dark leading-tight mb-6">
+          Feel lighter.<br />
+          Live calmer.<br />
+          Reflect daily.
         </h1>
 
-        <p className="text-gray-600 text-lg mt-4">
-          Havenly helps you understand your emotions, build mindful habits,
-          and unlock personal insights — all in a calm, private space.
+        <p className="text-gray-600 max-w-md mx-auto mb-8">
+          Havenly helps you build emotional clarity and resilience through
+          daily journaling and mindful check-ins.
         </p>
 
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            href="/auth/signup"
-            className="px-8 py-3 rounded-xl bg-[#0D7A7E] text-white font-medium shadow-md hover:bg-[#0B666A] transition"
-          >
-            Get Started
-          </Link>
-
-          <Link
-            href="/auth/login"
-            className="px-8 py-3 rounded-xl border border-[#0D7A7E] text-[#0D7A7E] font-medium shadow-sm hover:bg-[#E6F4F3] transition"
-          >
-            Log In
-          </Link>
-        </div>
+        <Link href="/auth/signup" className="btn-primary">
+          Start Your Journey
+        </Link>
       </section>
 
       {/* FEATURES SECTION */}
-      <section className="w-full max-w-4xl px-6 py-16 grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <section className="w-full max-w-4xl px-6 py-16 grid grid-cols-1 sm:grid-cols-3 gap-6 fade-in">
         
         {/* Card 1 */}
-        <div className="bg-white p-6 border rounded-xl shadow-sm">
-          <div className="text-3xl mb-3">🧠</div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">
+        <div className="h-card text-center">
+          <div className="text-4xl mb-3">🧠</div>
+          <h3 className="text-lg font-semibold text-brand-dark mb-2">
             Reflect Daily
           </h3>
           <p className="text-sm text-gray-600">
@@ -47,9 +37,9 @@ export default function HomePage() {
         </div>
 
         {/* Card 2 */}
-        <div className="bg-white p-6 border rounded-xl shadow-sm">
-          <div className="text-3xl mb-3">📊</div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">
+        <div className="h-card text-center">
+          <div className="text-4xl mb-3">📊</div>
+          <h3 className="text-lg font-semibold text-brand-dark mb-2">
             Track Your Mood
           </h3>
           <p className="text-sm text-gray-600">
@@ -58,9 +48,9 @@ export default function HomePage() {
         </div>
 
         {/* Card 3 */}
-        <div className="bg-white p-6 border rounded-xl shadow-sm">
-          <div className="text-3xl mb-3">✨</div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">
+        <div className="h-card text-center">
+          <div className="text-4xl mb-3">✨</div>
+          <h3 className="text-lg font-semibold text-brand-dark mb-2">
             Gain Insights
           </h3>
           <p className="text-sm text-gray-600">
@@ -70,19 +60,16 @@ export default function HomePage() {
       </section>
 
       {/* CTA SECTION */}
-      <section className="w-full max-w-3xl text-center px-6 pb-24">
-        <div className="bg-white border rounded-2xl p-8 shadow-md">
-          <h2 className="text-2xl font-bold text-[#0D7A7E]">
+      <section className="w-full max-w-3xl text-center px-6 pb-24 fade-in">
+        <div className="h-card p-8">
+          <h2 className="text-2xl font-bold text-brand-dark">
             Start your journey today
           </h2>
           <p className="text-gray-600 mt-2 mb-6">
             Build healthier mental habits in just a few minutes each day.
           </p>
 
-          <Link
-            href="/auth/signup"
-            className="px-8 py-3 rounded-xl bg-[#0D7A7E] text-white font-medium shadow-md hover:bg-[#0B666A] transition"
-          >
+          <Link href="/auth/signup" className="btn-primary">
             Create an account
           </Link>
         </div>
@@ -91,19 +78,3 @@ export default function HomePage() {
     </main>
   );
 }
-<section className="text-center py-20 px-6 fade-in">
-  <h1 className="text-4xl font-semibold text-brand-dark leading-tight mb-6">
-    Feel lighter.<br />
-    Live calmer.<br />
-    Reflect daily.
-  </h1>
-
-  <p className="text-gray-600 max-w-md mx-auto mb-8">
-    Havenly helps you build emotional clarity and resilience through
-    daily journaling and mindful check-ins.
-  </p>
-
-  <a href="/auth/signup" className="btn-primary">
-    Start Your Journey
-  </a>
-</section>
