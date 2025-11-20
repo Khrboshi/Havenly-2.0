@@ -1,24 +1,49 @@
+/* BRAND VARIABLES */
 :root {
-  /* Brand Colors */
   --brand-primary: #4CA7A3;
   --brand-primary-light: #76C5C0;
   --brand-primary-dark: #2E837F;
   --brand-bg: #F7FBFA;
   --brand-text: #1F2937;
 
-  /* Accent Colors */
   --accent-yellow: #F9D976;
   --accent-peach: #F6B8A1;
   --accent-pink: #FCE7F3;
 
-  /* Radii */
   --radius-lg: 16px;
   --radius-md: 12px;
   --radius-sm: 8px;
 
-  /* Typography */
-  --font-sans: "Inter", "SF Pro Rounded", sans-serif;
+  --font-sans: 'Inter', 'SF Pro Rounded', system-ui, sans-serif;
 
-  /* Motion */
-  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* UNIVERSAL CARD STYLE */
+.h-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+}
+
+/* BUTTONS */
+.btn-primary {
+  background: var(--brand-primary);
+  color: white;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  transition: background 0.25s var(--ease-smooth);
+  display: inline-block;
+}
+.btn-primary:hover {
+  background: var(--brand-primary-dark);
+}
+
+/* SECTION TITLES */
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--brand-primary-dark);
 }
