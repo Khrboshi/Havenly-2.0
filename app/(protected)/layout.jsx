@@ -1,24 +1,29 @@
-import { supabaseServer } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
+import { getServerSession } from "@/lib/session";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import BottomNav from "@/components/BottomNav";
+import "../globals.css";
 
+// This layout protects ALL routes under /dashboard, /profile, /mood, etc.
 export default async function ProtectedLayout({ children }) {
-  // Get Supabase client
-  const supabase = await supabaseServer();
+  const session = await getServerSession();
 
-  // Load session on the server
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  // If no session → redirect to login
-  if (!session) {
+  if (!session?.user) {
     redirect("/auth/login");
   }
 
-  // If user is authenticated → render protected content
   return (
-    <div className="min-h-screen w-full">
-      {children}
+    <div className="min-h-screen bg-[#F7FBFA] flex flex-col">
+      <Header />
+
+      {/* Page Wrapper */}
+      <main className="flex-1 w-full max-w-2xl mx-auto px-4 py-6 pb-28">
+        {children}
+      </main>
+
+      <BottomNav />
+      <Footer />
     </div>
   );
 }
