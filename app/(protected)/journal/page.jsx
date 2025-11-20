@@ -1,80 +1,86 @@
-"use client";
+import { getServerSession } from "@/lib/session";
+import { redirect } from "next/navigation";
+import { createServerSupabase } from "@/lib/supabase/server";
 
-import { useState } from "react";
-import { saveJournal } from "@/modules/journal/services";
-import { motion } from "framer-motion";
-import { fadeInUp } from "@/lib/animations";
+/** Fetch reflections (journal entries) */
+async function loadJournalEntries(userId) {
+  const supabase = createServerSupabase();
 
-export default function JournalPage() {
-  const [entry, setEntry] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState("");
+  const { data, error } = await supabase
+    .from("reflections")
+    .select("id, question, answer, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
 
-  async function save() {
-    if (!entry.trim()) return;
-
-    setSaving(true);
-    setSaved(false);
-    setError("");
-
-    try {
-      const success = await saveJournal(entry.trim());
-      if (!success) throw new Error("Failed to save entry.");
-
-      setEntry("");
-      setSaved(true);
-    } catch (err) {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setSaving(false);
-    }
+  if (error) {
+    console.error("Journal load error:", error);
+    return [];
   }
 
+  return data || [];
+}
+
+export default async function JournalPage() {
+  const session = await getServerSession();
+
+  if (!session?.user) {
+    redirect("/auth/login");
+  }
+
+  const entries = await loadJournalEntries(session.user.id);
+
   return (
-    <motion.div
-      variants={fadeInUp}
-      initial="hidden"
-      animate="show"
-      className="space-y-6"
-    >
+    <div className="space-y-8">
+
+      {/* Header */}
       <section>
-        <h2 className="text-xl font-semibold text-[#0D7A7E]">Journal</h2>
-        <p className="text-gray-600 text-sm mt-1">
-          Write your thoughts, feelings, or anything on your mind.
+        <h1 className="text-2xl font-bold text-[#0D7A7E]">Journal</h1>
+        <p className="text-sm text-gray-600 mt-1">
+          Your recent reflections and insights.
         </p>
       </section>
 
-      <textarea
-        value={entry}
-        onChange={(e) => setEntry(e.target.value)}
-        placeholder="Start writing here..."
-        rows={6}
-        className="w-full p-4 rounded-lg border border-gray-300 shadow-sm
-                   focus:outline-none focus:ring-2 focus:ring-[#0D7A7E] transition"
-      />
-
-      <button
-        onClick={save}
-        disabled={!entry.trim() || saving}
-        className={`w-full py-3 text-white rounded-lg transition ${
-          !entry.trim() || saving
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-[#0D7A7E] hover:bg-[#096064]"
-        }`}
+      {/* New Entry Button */}
+      <a
+        href="/reflect"
+        className="block w-full text-center py-3 bg-[#0D7A7E] text-white rounded-xl font-medium shadow-sm hover:bg-[#0B666A] transition"
       >
-        {saving ? "Saving…" : "Save Entry"}
-      </button>
+        Write a New Reflection
+      </a>
 
-      {saved && (
-        <p className="text-green-600 text-center text-sm mt-3">
-          Your journal entry has been saved.
-        </p>
-      )}
+      {/* Journal Entries */}
+      <section className="space-y-4">
+        {entries.length === 0 && (
+          <p className="text-sm text-gray-500 text-center py-10">
+            No reflections yet. Start your first one above.
+          </p>
+        )}
 
-      {error && (
-        <p className="text-red-600 text-center text-sm mt-3">{error}</p>
-      )}
-    </motion.div>
+        {entries.map((entry) => (
+          <div
+            key={entry.id}
+            className="bg-white border rounded-xl p-4 shadow-sm"
+          >
+            <p className="text-xs text-gray-400 mb-2">
+              {new Date(entry.created_at).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </p>
+
+            {entry.question && (
+              <p className="text-sm font-semibold text-gray-700 mb-1">
+                {entry.question}
+              </p>
+            )}
+
+            <p className="text-sm text-gray-600 whitespace-pre-line">
+              {entry.answer}
+            </p>
+          </div>
+        ))}
+      </section>
+    </div>
   );
 }
