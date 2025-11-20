@@ -1,42 +1,23 @@
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import { NextResponse } from "next/server";
+import { createServerSupabase } from "@/lib/supabase/server";
+import { checkStreakAchievements } from "@/lib/achievements";
 
-export async function POST() {
-  try {
-    const cookieStore = cookies();
+export async function POST(req) {
+  const supabase = createServerSupabase();
+  const { data: { session } } = await supabase.auth.getSession();
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      {
-        cookies: {
-          get(name) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name, value, options) {
-            cookieStore.set(name, value, options);
-          },
-          remove(name, options) {
-            cookieStore.set(name, "", { ...options, maxAge: 0 });
-          },
-        },
-      }
-    );
-
-    const {
-      data: { user },
-      error: userError
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    await supabase.rpc("increment_streak", { uid: user.id });
-
-    return Response.json({ success: true });
-  } catch (err) {
-    console.error("STREAK UPDATE ERROR:", err);
-    return Response.json({ error: "Server error" }, { status: 500 });
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { streak } = await req.json();
+
+  await supabase.from("streaks").upsert({
+    user_id: session.user.id,
+    streak,
+  });
+
+  const unlocked = await checkStreakAchievements(session.user.id, streak);
+
+  return NextResponse.json({ success: true, unlocked });
 }
