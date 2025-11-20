@@ -1,6 +1,6 @@
 "use server";
 
-import { supabaseServer } from "@/lib/supabaseServer";
+import { supabaseServer } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 export async function loginAction(formData) {
@@ -14,7 +14,10 @@ export async function loginAction(formData) {
     password,
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    console.error("Login error:", error.message);
+    throw new Error("Invalid login credentials");
+  }
 
   redirect("/dashboard");
 }
