@@ -1,41 +1,30 @@
-import { supabaseServer } from "@/lib/supabase/server";
-import Groq from "groq-sdk";
+import { NextResponse } from "next/server";
+import { createServerSupabase } from "@/lib/supabase/server";
 
 export async function POST(req) {
-  try {
-    const supabase = supabaseServer();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const supabase = createServerSupabase();
+  const { data: { session } } = await supabase.auth.getSession();
 
-    const { text } = await req.json();
-    if (!text) return Response.json({ error: "Missing text" }, { status: 400 });
-
-    const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
-    const completion = await client.chat.completions.create({
-      model: "llama-3.1-8b-instant",
-      messages: [
-        {
-          role: "system",
-          content: `
-Return 2 sentences:  
-1. Emotional summary.  
-2. One small actionable tip.`
-        },
-        { role: "user", content: text },
-      ],
-    });
-
-    const summary = completion.choices[0].message.content.trim();
-
-    await supabase.from("ai_insights").insert({
-      user_id: user.id,
-      input_text: text,
-      summary,
-    });
-
-    return Response.json({ summary });
-  } catch (e) {
-    return Response.json({ error: "Server error" }, { status: 500 });
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const body = await req.json();
+  const input = body.input ?? "";
+
+  if (!input.trim()) {
+    return NextResponse.json({ error: "Input required" }, { status: 400 });
+  }
+
+  // Save reflection input
+  await supabase.from("insights_input").insert({
+    user_id: session.user.id,
+    input_text: input,
+  });
+
+  // AI response (placeholder)
+  return NextResponse.json({
+    success: true,
+    insight: "Your insight will appear here."
+  });
 }
