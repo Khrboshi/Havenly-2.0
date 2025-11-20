@@ -91,3 +91,19 @@ export default function HomePage() {
     </main>
   );
 }
+<section className="text-center py-20 px-6 fade-in">
+  <h1 className="text-4xl font-semibold text-brand-dark leading-tight mb-6">
+    Feel lighter.<br />
+    Live calmer.<br />
+    Reflect daily.
+  </h1>
+
+  <p className="text-gray-600 max-w-md mx-auto mb-8">
+    Havenly helps you build emotional clarity and resilience through
+    daily journaling and mindful check-ins.
+  </p>
+
+  <a href="/auth/signup" className="btn-primary">
+    Start Your Journey
+  </a>
+</section>
