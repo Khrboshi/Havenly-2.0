@@ -3,7 +3,6 @@
 @tailwind utilities;
 
 /* GLOBAL BASE STYLES */
-
 html {
   scroll-behavior: smooth;
   background: #F7FBFA;
@@ -17,7 +16,6 @@ body {
 }
 
 /* OPTIONAL BRAND ANIMATIONS */
-
 .fade-in {
   animation: fadeIn 0.4s ease-out forwards;
 }
