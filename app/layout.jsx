@@ -1,4 +1,5 @@
-import './styles.css';
+import "./styles.css";
+import "./branding.css";
 import { Inter } from "next/font/google";
 
 const inter = Inter({
@@ -8,7 +9,7 @@ const inter = Inter({
 
 export const metadata = {
   title: "Havenly",
-  description: "Your space for daily reflection and emotional wellbeing.",
+  description: "Your space for emotional wellbeing and daily reflection.",
 };
 
 export default function RootLayout({ children }) {
