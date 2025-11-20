@@ -1,68 +1,66 @@
-"use client";
+import { redirect } from "next/navigation";
+import { getServerSession } from "@/lib/session";
+import { createServerSupabase } from "@/lib/supabase/server";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { getUserProfile, logoutUser } from "@/modules/profile/services";
-import { motion } from "framer-motion";
-import { fadeInUp } from "@/lib/animations";
+export default async function ProfilePage() {
+  const session = await getServerSession();
+  const supabase = createServerSupabase();
 
-export default function ProfilePage() {
-  const router = useRouter();
-  const [user, setUser] = useState(null);
+  if (!session?.user) {
+    redirect("/auth/login");
+  }
 
-  useEffect(() => {
-    async function load() {
-      const u = await getUserProfile();
-      setUser(u);
-    }
-
-    load();
-  }, []);
+  const user = session.user;
 
   async function logout() {
-    const ok = await logoutUser();
-
-    if (ok) {
-      document.cookie = "sb-access-token=; Max-Age=0; path=/;";
-      document.cookie = "sb-refresh-token=; Max-Age=0; path=/;";
-      router.push("/");
-    }
+    "use server";
+    const supabase = createServerSupabase();
+    await supabase.auth.signOut();
+    redirect("/auth/login");
   }
 
   return (
-    <motion.div
-      variants={fadeInUp}
-      initial="hidden"
-      animate="show"
-      className="space-y-6"
-    >
+    <div className="space-y-8">
+
+      {/* Header */}
       <section>
-        <h2 className="text-xl font-semibold text-[#0D7A7E]">Profile</h2>
-        <p className="text-gray-600 text-sm mt-1">
-          Manage your account and settings.
+        <h1 className="text-2xl font-bold text-[#0D7A7E]">My Profile</h1>
+        <p className="text-sm text-gray-600 mt-1">
+          Manage your account and preferences.
         </p>
       </section>
 
-      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-        <p className="text-gray-600 text-sm mb-1">Email</p>
-        <p className="text-[#0D7A7E] font-medium">
-          {user?.email ?? "loading…"}
-        </p>
-      </div>
+      {/* User Info Card */}
+      <section className="bg-white border rounded-xl p-5 shadow-sm space-y-4">
+        <div>
+          <p className="text-xs uppercase text-gray-500 mb-1">Email</p>
+          <p className="text-sm font-medium text-gray-700">{user.email}</p>
+        </div>
 
-      <button
-        onClick={logout}
-        className="w-full py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg transition"
-      >
-        Log Out
-      </button>
+        <div>
+          <p className="text-xs uppercase text-gray-500 mb-1">User ID</p>
+          <p className="text-xs text-gray-500">{user.id}</p>
+        </div>
+      </section>
 
-      <button
-        onClick={() => router.push("/dashboard")}
-        className="w-full py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition"
-      >
-        Back to Dashboard
-      </button>
-    </motion.div>
+      {/* Account Actions */}
+      <section className="space-y-3">
+        <a
+          href="/auth/passkey"
+          className="block w-full py-3 text-center border border-[#0D7A7E] text-[#0D7A7E] rounded-xl font-medium hover:bg-[#E6F4F3] transition"
+        >
+          Enable FaceID / TouchID
+        </a>
+
+        <form action={logout}>
+          <button
+            type="submit"
+            className="w-full bg-red-600 text-white py-3 rounded-xl font-medium hover:bg-red-700 transition"
+          >
+            Log Out
+          </button>
+        </form>
+      </section>
+    </div>
   );
 }
