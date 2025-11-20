@@ -2,42 +2,60 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { User, Info } from "lucide-react";
 
 export default function Header() {
   const pathname = usePathname();
 
-  const links = [
-    { name: "Dashboard", href: "/dashboard" },
-    { name: "Mood", href: "/mood" },
-    { name: "Journal", href: "/journal" },
-    { name: "Reflect", href: "/reflect" },
-    { name: "Insights", href: "/insights" },
-    { name: "Profile", href: "/profile" },
+  // Hide header on mobile if BottomNav is visible
+  const isMobile =
+    typeof window !== "undefined" && window.innerWidth < 768;
+  if (isMobile) return null;
+
+  const navItems = [
+    { href: "/", label: "Home" },
+    { href: "/reflect", label: "Reflect" },
+    { href: "/mood", label: "Mood" },
+    { href: "/insights", label: "Insights" },
+    { href: "/about", label: "About" },
   ];
 
   return (
-    <header className="w-full border-b bg-white/80 backdrop-blur-sm">
-      <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">
-        
-        <Link href="/" className="text-2xl font-semibold text-[#0D7A7E]">
+    <header className="w-full bg-white border-b shadow-sm">
+      <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+
+        {/* BRAND / LOGO */}
+        <Link href="/" className="text-2xl font-bold tracking-tight text-brand-dark">
           Havenly
         </Link>
 
-        <nav className="flex gap-6 text-sm text-gray-700">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={
-                pathname === link.href
-                  ? "text-[#0D7A7E] font-semibold"
-                  : "hover:text-[#0D7A7E]"
-              }
-            >
-              {link.name}
-            </Link>
-          ))}
+        {/* NAV LINKS */}
+        <nav className="hidden md:flex items-center gap-6">
+          {navItems.map(({ href, label }) => {
+            const isActive = pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`font-medium transition ${
+                  isActive
+                    ? "text-brand underline underline-offset-4 decoration-2"
+                    : "text-slate-600 hover:text-brand-dark"
+                }`}
+              >
+                {label}
+              </Link>
+            );
+          })}
         </nav>
+
+        {/* PROFILE ICON */}
+        <Link
+          href="/profile"
+          className="text-brand-dark hover:text-brand transition"
+        >
+          <User size={26} strokeWidth={2.2} />
+        </Link>
       </div>
     </header>
   );
