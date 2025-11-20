@@ -1,27 +1,20 @@
-import "@/app/globals.css";
+import "./globals.css";
 import { Inter } from "next/font/google";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata = {
   title: "Havenly",
-  description: "Your daily emotional wellness companion.",
+  description: "Your space for daily reflection and emotional wellbeing.",
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} bg-[#F7FBFA] text-gray-900`}>
-        <div className="min-h-screen flex flex-col">
-          <Header />
-          <main className="flex-1 w-full mx-auto max-w-3xl px-4 py-6">
-            {children}
-          </main>
-          <Footer />
-        </div>
-      </body>
+    <html lang="en" className={inter.className}>
+      <body>{children}</body>
     </html>
   );
 }
