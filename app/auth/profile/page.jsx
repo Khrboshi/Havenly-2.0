@@ -3,24 +3,48 @@
 import { useEffect, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 
-export default function ProfilePage() {
-  const supabase = supabaseBrowser();
-  const [user, setUser] = useState(null);
+export default function AuthProfilePage() {
+  const [email, setEmail] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase.auth.getUser();
-      setUser(data.user);
+      try {
+        const supabase = supabaseBrowser();
+        const { data, error } = await supabase.auth.getUser();
+        if (error) {
+          console.error("Auth profile error:", error);
+        }
+        setEmail(data?.user?.email ?? null);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
-  }, [supabase]);
+  }, []);
 
-  if (!user) return <p>Loading…</p>;
+  if (loading) {
+    return (
+      <main className="p-6">
+        <p className="text-sm text-slate-500">Loading profile…</p>
+      </main>
+    );
+  }
+
+  if (!email) {
+    return (
+      <main className="p-6">
+        <p className="text-sm text-slate-600">
+          No authenticated user. Please log in first.
+        </p>
+      </main>
+    );
+  }
 
   return (
     <main className="p-6">
-      <h1 className="text-2xl font-bold">Profile</h1>
-      <p className="mt-4 text-sm text-slate-600">Email: {user.email}</p>
+      <h1 className="text-2xl font-bold mb-2">Profile</h1>
+      <p className="text-sm text-slate-600">Email: {email}</p>
     </main>
   );
 }
