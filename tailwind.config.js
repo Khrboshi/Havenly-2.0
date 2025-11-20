@@ -26,7 +26,7 @@ module.exports = {
         sm: "8px",
       },
       fontFamily: {
-        display: ['"SF Pro Rounded"', "Inter", "sans-serif"],
+        sans: ["Inter", "SF Pro Rounded", "system-ui", "sans-serif"],
       },
     },
   },
