@@ -1,57 +1,102 @@
-import { supabaseServer } from "@/lib/supabaseServer";
-import { getMoodTrend } from "@/modules/ai/actions";
-import { getUserStats } from "@/modules/data/stats";
+"use client";
 
-export default async function InsightsPage() {
-  // Load Supabase session
-  const supabase = await supabaseServer();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+import { useState } from "react";
 
-  if (!session) {
-    return <div className="p-6">You must be logged in to view Insights.</div>;
+export default function InsightsPage() {
+  const [input, setInput] = useState("");
+  const [insight, setInsight] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  /** Request AI insight */
+  async function getInsight() {
+    if (!input.trim()) {
+      setError("Please enter a thought or reflection.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setInsight(null);
+
+    try {
+      const res = await fetch("/api/insights", {
+        method: "POST",
+        body: JSON.stringify({ input }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Unable to generate insight.");
+      }
+
+      const data = await res.json();
+      setInsight(data.insight || "No insight returned.");
+    } catch (err) {
+      setError(err.message || "An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  const userId = session.user.id;
-
-  // Load mood stats
-  const stats = await getUserStats(userId);
-
-  // Load AI trend
-  const aiTrend = await getMoodTrend(userId);
-
   return (
-    <div className="space-y-8 p-4">
-      <h1 className="text-2xl font-bold text-[#0D7A7E]">Your Insights</h1>
+    <div className="space-y-8">
 
-      {/* Latest Mood */}
-      <section className="bg-white p-4 rounded-lg shadow">
-        <h2 className="font-semibold text-lg mb-2">Latest Mood</h2>
-        {stats.latestMood ? (
-          <p className="text-gray-700">
-            Your most recent mood was:
-            <span className="font-semibold ml-2">{stats.latestMood.mood}</span>
+      {/* Header */}
+      <section>
+        <h1 className="text-2xl font-bold text-[#0D7A7E]">AI Insights</h1>
+        <p className="text-sm text-gray-600 mt-1">
+          Enter a thought or reflection and receive a personalized interpretation.
+        </p>
+      </section>
+
+      {/* Input */}
+      <section className="space-y-4">
+        <textarea
+          rows={6}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Share your reflection or emotional note here…"
+          className="w-full border p-3 rounded-xl focus:ring-[#0D7A7E]"
+        />
+
+        {error && (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2">
+            {error}
           </p>
-        ) : (
-          <p className="text-gray-500">No mood entries yet.</p>
+        )}
+
+        <button
+          onClick={getInsight}
+          disabled={loading}
+          className="w-full py-3 bg-[#0D7A7E] text-white rounded-xl font-medium disabled:bg-gray-400"
+        >
+          {loading ? "Analyzing…" : "Generate Insight"}
+        </button>
+      </section>
+
+      {/* Output */}
+      <section>
+        {loading && (
+          <div className="bg-white border rounded-xl p-4 shadow-sm animate-pulse">
+            <p className="text-sm text-gray-600">Thinking…</p>
+          </div>
+        )}
+
+        {insight && (
+          <div className="bg-white border rounded-xl p-4 shadow-sm">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Your Insight</h3>
+            <p className="text-sm text-gray-700 whitespace-pre-line">{insight}</p>
+          </div>
         )}
       </section>
 
-      {/* Mood Trend */}
-      <section className="bg-white p-4 rounded-lg shadow">
-        <h2 className="font-semibold text-lg mb-2">Mood Trend (AI)</h2>
-        <p className="text-gray-700">{aiTrend.forecast}</p>
+      {/* Link to Reflect */}
+      <section className="text-center">
+        <a href="/reflect" className="text-[#0D7A7E] font-medium underline">
+          Or write a new reflection →
+        </a>
       </section>
 
-      {/* Journal & Reflection Stats */}
-      <section className="bg-white p-4 rounded-lg shadow">
-        <h2 className="font-semibold text-lg mb-2">Activity Summary</h2>
-        <ul className="text-gray-700 space-y-1">
-          <li>Journal Entries: {stats.journalCount}</li>
-          <li>Reflections Completed: {stats.reflectionCount}</li>
-        </ul>
-      </section>
     </div>
   );
 }
