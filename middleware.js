@@ -1,42 +1,27 @@
 import { NextResponse } from "next/server";
+import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 
-export function middleware(req) {
-  const url = req.nextUrl.clone();
+export async function middleware(req) {
+  const res = NextResponse.next();
 
-  const protectedRoutes = [
-    "/dashboard",
-    "/mood",
-    "/journal",
-    "/reflect",
-    "/insights",
-    "/profile",
-  ];
+  // Attach Supabase middleware client (handles session cookies)
+  const supabase = createMiddlewareClient({ req, res });
 
-  const pathname = req.nextUrl.pathname;
+  // This line ensures cookies are updated properly
+  await supabase.auth.getSession();
 
-  const isProtected = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
-
-  // Read Supabase auth cookie directly
-  const accessToken = req.cookies.get("sb-access-token")?.value;
-
-  // If entering protected route without token → redirect to login
-  if (isProtected && !accessToken) {
-    url.pathname = "/auth/login";
-    return NextResponse.redirect(url);
-  }
-
-  return NextResponse.next();
+  return res;
 }
 
+// Pages protected under (protected)
 export const config = {
   matcher: [
     "/dashboard/:path*",
-    "/mood/:path*",
-    "/journal/:path*",
-    "/reflect/:path*",
-    "/insights/:path*",
     "/profile/:path*",
+    "/mood/:path*",
+    "/reflect/:path*",
+    "/journal/:path*",
+    "/achievements/:path*",
+    "/insights/:path*",
   ],
 };
