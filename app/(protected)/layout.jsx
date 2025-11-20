@@ -1,13 +1,15 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "@/lib/session";
 import Header from "@/components/Header";
-import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
+import BottomNav from "@/components/BottomNav";
 
 export default async function ProtectedLayout({ children }) {
   const session = await getServerSession();
 
-  if (!session) redirect("/auth/login");
+  if (!session) {
+    redirect("/auth/login");
+  }
 
   return (
     <div className="min-h-screen bg-[#F7FBFA] flex flex-col">
