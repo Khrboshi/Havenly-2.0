@@ -6,7 +6,29 @@ module.exports = {
     "./lib/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        brand: {
+          DEFAULT: "#4CA7A3",
+          light: "#76C5C0",
+          dark: "#2E837F",
+          bg: "#F7FBFA",
+        },
+        accent: {
+          yellow: "#F9D976",
+          peach: "#F6B8A1",
+          pink: "#FCE7F3",
+        },
+      },
+      borderRadius: {
+        lg: "16px",
+        md: "12px",
+        sm: "8px",
+      },
+      fontFamily: {
+        display: ['"SF Pro Rounded"', "Inter", "sans-serif"],
+      },
+    },
   },
   plugins: [],
 };
