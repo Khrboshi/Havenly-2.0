@@ -1,101 +1,99 @@
 "use client";
 
 import { useState } from "react";
-import { saveMood } from "@/modules/mood/services";
-import { motion } from "framer-motion";
-import { fadeInUp } from "@/lib/animations";
-
-const moodOptions = [
-  { value: 1, label: "😞 Very Low" },
-  { value: 2, label: "😒 Low" },
-  { value: 3, label: "😐 Neutral" },
-  { value: 4, label: "🙂 Good" },
-  { value: 5, label: "😄 Great" },
-];
 
 export default function MoodPage() {
-  const [selectedMood, setSelectedMood] = useState(null);
-  const [saving, setSaving] = useState(false);
+  const [mood, setMood] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null);
 
-  async function save() {
-    if (!selectedMood) return;
-
-    setSaving(true);
-    setSaved(false);
-    setError("");
-
-    const response = await saveMood(selectedMood);
-
-    if (response?.error) {
-      setError("Unable to save mood. Please try again.");
-      setSaving(false);
+  async function submitMood() {
+    if (!mood) {
+      setError("Please select a mood.");
       return;
     }
 
-    setSaving(false);
-    setSaved(true);
-    setSelectedMood(null);
+    setLoading(true);
+    setError(null);
+    setSaved(false);
+
+    try {
+      const res = await fetch("/api/mood", {
+        method: "POST",
+        body: JSON.stringify({ mood }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to save mood.");
+      }
+
+      setSaved(true);
+    } catch (err) {
+      setError(err.message || "Unable to save mood.");
+    } finally {
+      setLoading(false);
+    }
   }
 
+  const moods = [
+    { label: "Great", value: "great", emoji: "😄" },
+    { label: "Good", value: "good", emoji: "🙂" },
+    { label: "Okay", value: "okay", emoji: "😐" },
+    { label: "Bad", value: "bad", emoji: "😞" },
+    { label: "Terrible", value: "terrible", emoji: "😣" },
+  ];
+
   return (
-    <motion.div
-      variants={fadeInUp}
-      initial="hidden"
-      animate="show"
-      className="space-y-6"
-    >
+    <div className="space-y-8">
+
+      {/* Header */}
       <section>
-        <h2 className="text-xl font-semibold text-[#0D7A7E]">
-          How are you feeling today?
-        </h2>
-        <p className="text-gray-600 text-sm mt-1">
-          Select the option that best represents your current emotional state.
+        <h1 className="text-2xl font-bold text-[#0D7A7E]">Log Your Mood</h1>
+        <p className="text-sm text-gray-600 mt-1">
+          Select how you're feeling today.
         </p>
       </section>
 
-      <div className="grid grid-cols-1 gap-4">
-        {moodOptions.map((mood) => {
-          const active = selectedMood === mood.value;
-          return (
-            <button
-              key={mood.value}
-              onClick={() => setSelectedMood(mood.value)}
-              disabled={saving}
-              className={`p-4 rounded-lg border shadow-sm text-left transition ${
-                active
-                  ? "border-[#0D7A7E] bg-[#E6F4F3]"
-                  : "border-gray-200 bg-white"
-              }`}
-            >
-              <span className="text-xl">{mood.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      {/* Mood Options */}
+      <section className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        {moods.map((m) => (
+          <button
+            key={m.value}
+            onClick={() => setMood(m.value)}
+            className={`flex flex-col items-center justify-center border rounded-xl py-4 shadow-sm transition ${
+              mood === m.value
+                ? "bg-[#0D7A7E] text-white border-[#0D7A7E]"
+                : "bg-white text-gray-700 hover:bg-[#F1F7F6]"
+            }`}
+          >
+            <span className="text-3xl mb-1">{m.emoji}</span>
+            <span className="text-sm font-medium">{m.label}</span>
+          </button>
+        ))}
+      </section>
 
-      <button
-        onClick={save}
-        disabled={!selectedMood || saving}
-        className={`w-full py-3 text-white rounded-lg transition ${
-          !selectedMood || saving
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-[#0D7A7E] hover:bg-[#096064]"
-        }`}
-      >
-        {saving ? "Saving…" : "Save Mood"}
-      </button>
-
-      {saved && (
-        <p className="text-green-600 text-center text-sm mt-3">
-          Your mood has been saved!
+      {/* Status Messages */}
+      {error && (
+        <p className="text-sm text-red-600 bg-red-50 p-2 rounded-md border border-red-200">
+          {error}
         </p>
       )}
 
-      {error && (
-        <p className="text-red-600 text-center text-sm mt-3">{error}</p>
+      {saved && (
+        <p className="text-sm text-green-700 bg-green-50 p-2 rounded-md border border-green-200">
+          Mood saved successfully!
+        </p>
       )}
-    </motion.div>
+
+      {/* Submit Button */}
+      <button
+        onClick={submitMood}
+        disabled={loading}
+        className="w-full py-3 bg-[#0D7A7E] text-white rounded-xl font-medium disabled:bg-gray-400"
+      >
+        {loading ? "Saving…" : "Save Mood"}
+      </button>
+    </div>
   );
 }
