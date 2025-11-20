@@ -1,79 +1,141 @@
-import { supabaseServer } from "@/lib/supabaseServer";
-import { getUserStats } from "@/modules/data/stats";
-import { getMoodTrend } from "@/modules/ai/actions";
+import { getServerSession } from "@/lib/session";
+import { createServerSupabase } from "@/lib/supabase/server";
+
+/** Reusable card */
+function DashboardCard({ title, value, description }) {
+  return (
+    <div className="bg-white border rounded-xl p-4 shadow-sm">
+      <h3 className="text-sm font-medium text-gray-600">{title}</h3>
+      <p className="text-3xl font-semibold text-[#0D7A7E] mt-2">{value}</p>
+      {description && (
+        <p className="text-xs text-gray-500 mt-1">{description}</p>
+      )}
+    </div>
+  );
+}
+
+/** Fetch dashboard data from Supabase */
+async function getDashboardData(userId) {
+  const supabase = createServerSupabase();
+
+  const [{ data: moods }, { data: journals }, { data: streaks }] =
+    await Promise.all([
+      supabase
+        .from("moods")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(7),
+
+      supabase
+        .from("reflections")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(7),
+
+      supabase
+        .from("streaks")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle(),
+    ]);
+
+  return {
+    recentMood: moods?.[0]?.mood ?? "—",
+    moodCount: moods?.length ?? 0,
+    journalCount: journals?.length ?? 0,
+    streak: streaks?.streak ?? 0,
+  };
+}
 
 export default async function DashboardPage() {
-  const supabase = await supabaseServer();
+  const session = await getServerSession();
+  const user = session?.user;
 
-  // Load authenticated session
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
+  if (!user) {
+    // Should not occur because protected layout handles redirect,
+    // but we keep this as a failsafe
     return (
-      <div className="p-6 text-gray-600">
-        Please log in to view your dashboard.
-      </div>
+      <main className="p-6">
+        <p className="text-sm text-gray-600">Not authenticated.</p>
+      </main>
     );
   }
 
-  // Load stats (user ID auto-extracted internally)
-  const stats = await getUserStats();
-
-  // Load AI mood trend
-  const aiTrend = await getMoodTrend();
+  const data = await getDashboardData(user.id);
 
   return (
-    <div className="space-y-8 p-4 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold text-[#0D7A7E]">Welcome Back</h1>
+    <div className="space-y-6">
 
-      {/* Latest Mood */}
-      <section className="bg-white p-4 rounded-lg shadow">
-        <h2 className="font-semibold text-lg mb-2">Your Latest Mood</h2>
+      {/* Greeting */}
+      <section>
+        <h1 className="text-2xl font-bold text-[#0D7A7E]">
+          Welcome back, {user.email.split("@")[0]}
+        </h1>
+        <p className="text-sm text-gray-600 mt-1">
+          Here’s a quick view of your recent wellbeing activity.
+        </p>
+      </section>
 
-        {stats.latestMood ? (
-          <p className="text-gray-700">
-            Your latest recorded mood is:
-            <span className="ml-2 font-semibold text-[#0D7A7E]">
-              {stats.latestMood.score} / 5
-            </span>
+      {/* Dashboard Stats */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <DashboardCard
+          title="Current Streak"
+          value={data.streak}
+          description="Daily reflection streak"
+        />
+        <DashboardCard
+          title="Recent Mood"
+          value={data.recentMood}
+          description="Your latest mood entry"
+        />
+        <DashboardCard
+          title="Mood Entries"
+          value={data.moodCount}
+          description="Past 7 days"
+        />
+        <DashboardCard
+          title="Reflection Entries"
+          value={data.journalCount}
+          description="Past 7 reflections"
+        />
+      </section>
+
+      {/* Quick Actions */}
+      <section className="space-y-3">
+        <a
+          href="/mood"
+          className="block bg-[#0D7A7E] text-white text-center rounded-xl py-3 font-medium shadow-sm hover:bg-[#096064] transition"
+        >
+          Log Today’s Mood
+        </a>
+
+        <a
+          href="/reflect"
+          className="block bg-white border border-[#0D7A7E] text-[#0D7A7E] text-center rounded-xl py-3 font-medium shadow-sm hover:bg-[#E6F4F3] transition"
+        >
+          Start a Reflection
+        </a>
+      </section>
+
+      {/* Insights Preview */}
+      <section>
+        <div className="bg-white border rounded-xl p-4 shadow-sm">
+          <h3 className="text-sm font-medium text-gray-700">AI Insights</h3>
+          <p className="text-xs text-gray-500 mt-1">
+            Your personal trends will appear here once you have enough entries.
           </p>
-        ) : (
-          <p className="text-gray-500">You haven’t logged any moods yet.</p>
-        )}
+
+          <a
+            href="/insights"
+            className="inline-block mt-3 text-sm font-medium text-[#0D7A7E] underline"
+          >
+            View insights →
+          </a>
+        </div>
       </section>
 
-      {/* Mood Streak */}
-      <section className="bg-white p-4 rounded-lg shadow">
-        <h2 className="font-semibold text-lg mb-2">Daily Streak</h2>
-        <p className="text-gray-700">
-          You have logged moods for:
-          <span className="ml-2 font-semibold text-[#0D7A7E]">
-            {stats.streak} {stats.streak === 1 ? "day" : "days"}
-          </span>
-          {" "}in a row.
-        </p>
-      </section>
-
-      {/* Mood Trend (AI Forecast) */}
-      <section className="bg-white p-4 rounded-lg shadow">
-        <h2 className="font-semibold text-lg mb-2">Mood Trend (AI)</h2>
-        <p className="text-gray-700">
-          {aiTrend?.forecast || "No AI trend available yet."}
-        </p>
-      </section>
-
-      {/* Activity Summary */}
-      <section className="bg-white p-4 rounded-lg shadow">
-        <h2 className="font-semibold text-lg mb-2">Your Activity Summary</h2>
-
-        <ul className="text-gray-700 space-y-1">
-          <li>Journal Entries: {stats.journalCount}</li>
-          <li>Reflections: {stats.reflectionCount}</li>
-          <li>Mood Entries (14 days): {stats.recentMoods.length}</li>
-        </ul>
-      </section>
     </div>
   );
 }
