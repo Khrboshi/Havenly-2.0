@@ -18,3 +18,22 @@ module.exports = {
   },
   plugins: []
 };
+colors: {
+  brand: {
+    DEFAULT: "#0D7A7E",
+    dark: "#0B666A",
+    light: "#E6F4F3",
+  },
+  surface: {
+    DEFAULT: "#FFFFFF",
+    soft: "#F7FBFA",
+  }
+},
+borderRadius: {
+  xl: "1rem",
+  '2xl': "1.5rem",
+},
+boxShadow: {
+  card: "0 2px 8px rgba(0,0,0,0.06)",
+  soft: "0 1px 5px rgba(0,0,0,0.04)",
+},
