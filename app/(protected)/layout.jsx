@@ -13,7 +13,9 @@ export default async function ProtectedLayout({ children }) {
     data: { session },
   } = await supabase.auth.getSession();
 
-  if (!session?.user) redirect("/auth/login");
+  if (!session?.user) {
+    redirect("/auth/login");
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F7FBFA]">
