@@ -1,24 +1,26 @@
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+
 import { redirect } from "next/navigation";
-import { getServerSession } from "@/lib/session";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BottomNav from "@/components/BottomNav";
+import { supabaseServer } from "@/lib/supabase/server";
 
 export default async function ProtectedLayout({ children }) {
-  const session = await getServerSession();
+  const supabase = await supabaseServer();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (!session) {
-    redirect("/auth/login");
-  }
+  if (!session?.user) redirect("/auth/login");
 
   return (
-    <div className="min-h-screen bg-[#F7FBFA] flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#F7FBFA]">
       <Header />
-
       <main className="flex-1 w-full max-w-2xl mx-auto px-4 py-6 pb-28">
         {children}
       </main>
-
       <BottomNav />
       <Footer />
     </div>
