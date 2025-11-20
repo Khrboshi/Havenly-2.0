@@ -13,9 +13,10 @@ body {
   margin: 0;
   padding: 0;
   color: #1F2937; /* Gray 800 */
+  background: #F7FBFA;
 }
 
-/* Optional brand animation classes */
+/* OPTIONAL BRAND ANIMATIONS */
 
 .fade-in {
   animation: fadeIn 0.4s ease-out forwards;
