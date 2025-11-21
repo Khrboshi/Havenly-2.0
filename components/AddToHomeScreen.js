@@ -1,3 +1,4 @@
+// components/AddToHomeScreen.js
 "use client";
 
 import { useEffect, useState } from "react";
@@ -17,7 +18,7 @@ export default function AddToHomeScreen() {
     const android = /android/.test(ua);
 
     const standalone =
-      window.navigator.standalone ||
+      (window.navigator as any).standalone ||
       window.matchMedia("(display-mode: standalone)").matches;
 
     setIsIos(ios);
@@ -26,24 +27,27 @@ export default function AddToHomeScreen() {
 
     const dismissed = window.localStorage.getItem("a2hs-dismissed");
 
-    const handleBeforeInstall = (e) => {
+    function handleBeforeInstallPrompt(e) {
       e.preventDefault();
       setDeferredPrompt(e);
 
       if (!dismissed && !standalone) {
         setTimeout(() => setVisible(true), 2200);
       }
-    };
+    }
 
-    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
-    // iOS custom popup (no native event)
+    // iOS custom popup
     if (ios && !standalone && !dismissed) {
       setTimeout(() => setVisible(true), 2200);
     }
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt
+      );
     };
   }, []);
 
@@ -60,7 +64,7 @@ export default function AddToHomeScreen() {
     deferredPrompt.prompt();
     const result = await deferredPrompt.userChoice;
 
-    if (result?.outcome === "accepted") {
+    if (result.outcome === "accepted") {
       console.log("User accepted A2HS");
     } else {
       console.log("User dismissed A2HS");
@@ -79,7 +83,7 @@ export default function AddToHomeScreen() {
 
       <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-sm z-50 animate-slideUp">
         <div className="bg-white shadow-2xl rounded-2xl p-5 border border-gray-200 relative">
-          {/* Floating icon */}
+          {/* Bounce icon */}
           <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-white shadow-md rounded-full p-3 animate-bounceSlow">
             {isIos ? (
               <span className="text-2xl">📤</span>
@@ -93,16 +97,17 @@ export default function AddToHomeScreen() {
           </h2>
 
           <p className="text-sm text-gray-600 mt-2 text-center leading-relaxed">
-            Install the app for quicker access and a smoother, app-like
-            experience.
+            Install the app for quicker access and a smoother experience.
           </p>
 
+          {/* iOS Instructions */}
           {isIos && (
             <p className="text-xs text-gray-600 mt-3 text-center">
               Tap <strong>Share → “Add to Home Screen”</strong>.
             </p>
           )}
 
+          {/* Android Native Install */}
           {isAndroid && deferredPrompt && (
             <button
               onClick={installAndroid}
@@ -112,10 +117,10 @@ export default function AddToHomeScreen() {
             </button>
           )}
 
+          {/* Android fallback */}
           {isAndroid && !deferredPrompt && (
             <p className="text-xs text-gray-600 mt-3 text-center">
-              Open your browser menu and tap{" "}
-              <strong>“Install App”</strong>.
+              Open your browser menu and tap <strong>“Install App”</strong>.
             </p>
           )}
 
