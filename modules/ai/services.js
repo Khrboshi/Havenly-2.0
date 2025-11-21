@@ -10,7 +10,6 @@ export async function generateAIResponse(prompt) {
   try {
     const result = await safeGroq(prompt);
 
-    // AI response must always be safe text
     if (!result || typeof result !== "string") {
       return "Unable to generate a response.";
     }
