@@ -10,49 +10,57 @@ export default function AddToHomeScreen() {
   const [isAndroid, setIsAndroid] = useState(false);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const ua = window.navigator.userAgent.toLowerCase();
     const ios = /iphone|ipad|ipod/.test(ua);
     const android = /android/.test(ua);
 
     const standalone =
-      navigator.standalone ||
+      window.navigator.standalone ||
       window.matchMedia("(display-mode: standalone)").matches;
 
     setIsIos(ios);
     setIsAndroid(android);
     setIsStandalone(standalone);
 
-    const dismissed = localStorage.getItem("a2hs-dismissed");
+    const dismissed = window.localStorage.getItem("a2hs-dismissed");
 
-    // Capture ANDROID install prompt event
-    window.addEventListener("beforeinstallprompt", (e) => {
-      e.preventDefault(); // Prevent the mini-infobar
+    const handleBeforeInstall = (e) => {
+      e.preventDefault();
       setDeferredPrompt(e);
 
       if (!dismissed && !standalone) {
         setTimeout(() => setVisible(true), 2200);
       }
-    });
+    };
 
-    // iOS custom popup
+    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+
+    // iOS custom popup (no native event)
     if (ios && !standalone && !dismissed) {
       setTimeout(() => setVisible(true), 2200);
     }
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+    };
   }, []);
 
   const close = () => {
-    localStorage.setItem("a2hs-dismissed", "true");
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("a2hs-dismissed", "true");
+    }
     setVisible(false);
   };
 
-  // ✅ FIXED FUNCTION (this was broken)
   const installAndroid = async () => {
     if (!deferredPrompt) return;
 
     deferredPrompt.prompt();
     const result = await deferredPrompt.userChoice;
 
-    if (result.outcome === "accepted") {
+    if (result?.outcome === "accepted") {
       console.log("User accepted A2HS");
     } else {
       console.log("User dismissed A2HS");
@@ -71,8 +79,7 @@ export default function AddToHomeScreen() {
 
       <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-sm z-50 animate-slideUp">
         <div className="bg-white shadow-2xl rounded-2xl p-5 border border-gray-200 relative">
-
-          {/* Bounce icon */}
+          {/* Floating icon */}
           <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-white shadow-md rounded-full p-3 animate-bounceSlow">
             {isIos ? (
               <span className="text-2xl">📤</span>
@@ -86,17 +93,16 @@ export default function AddToHomeScreen() {
           </h2>
 
           <p className="text-sm text-gray-600 mt-2 text-center leading-relaxed">
-            Install the app for quicker access and a smoother experience.
+            Install the app for quicker access and a smoother, app-like
+            experience.
           </p>
 
-          {/* iOS Instructions */}
           {isIos && (
             <p className="text-xs text-gray-600 mt-3 text-center">
               Tap <strong>Share → “Add to Home Screen”</strong>.
             </p>
           )}
 
-          {/* Android Native Install */}
           {isAndroid && deferredPrompt && (
             <button
               onClick={installAndroid}
@@ -106,10 +112,10 @@ export default function AddToHomeScreen() {
             </button>
           )}
 
-          {/* Android fallback */}
           {isAndroid && !deferredPrompt && (
             <p className="text-xs text-gray-600 mt-3 text-center">
-              Open your browser menu and tap <strong>“Install App”</strong>.
+              Open your browser menu and tap{" "}
+              <strong>“Install App”</strong>.
             </p>
           )}
 
@@ -135,7 +141,8 @@ export default function AddToHomeScreen() {
         }
 
         @keyframes bounceSlow {
-          0%, 100% {
+          0%,
+          100% {
             transform: translate(-50%, 0);
           }
           50% {
