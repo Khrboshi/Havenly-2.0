@@ -12,6 +12,7 @@ export default function LoginPage() {
         action={async (formData) => {
           const result = await loginAction(formData);
           if (result?.error) setError(result.error);
+          // No manual redirect here – server action handles it
         }}
         className="bg-white p-8 rounded-xl shadow-md w-full max-w-sm"
       >
