@@ -1,27 +1,23 @@
-"use client";
-
-import { cn } from "@/lib/utils";
-
+// components/ui/Button.jsx
 export default function Button({
   children,
   variant = "primary",
-  className,
+  className = "",
   ...props
 }) {
   const base =
-    "w-full py-3 rounded-xl font-medium transition text-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand";
+    "w-full py-3 rounded-xl font-medium transition text-center disabled:opacity-50 disabled:cursor-not-allowed";
 
   const variants = {
     primary: "bg-brand text-white hover:bg-brand-dark",
-    outline:
-      "border border-brand text-brand hover:bg-brand-light hover:text-brand-dark bg-white",
-    soft: "bg-brand-light text-brand-dark hover:bg-brand",
+    outline: "border border-brand text-brand hover:bg-brand-light",
+    soft: "bg-brand-light text-brand hover:bg-brand-dark",
     danger: "bg-red-600 text-white hover:bg-red-700",
   };
 
   return (
     <button
-      className={cn(base, variants[variant] ?? variants.primary, className)}
+      className={`${base} ${variants[variant]} ${className}`}
       {...props}
     >
       {children}
