@@ -1,36 +1,35 @@
 export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
-import { supabaseServer } from "@/lib/supabase/server";
+import { createServerSupabase } from "@/lib/supabase/server";
 
 export default async function ProfilePage() {
-  const supabase = await supabaseServer();
+  const supabase = await createServerSupabase();
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
-  if (!session?.user) {
-    redirect("/auth/login");
-  }
+  if (!session?.user) redirect("/auth/login");
 
   const user = session.user;
 
   async function logout() {
     "use server";
-    const supabase = await supabaseServer();
+    const supabase = await createServerSupabase();
     await supabase.auth.signOut();
     redirect("/auth/login");
   }
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-[#0D7A7E]">My Profile</h1>
+      <h1 className="text-2xl font-bold text-brand-dark">My Profile</h1>
 
       <section className="bg-white p-5 rounded-xl border shadow-sm space-y-4">
         <div>
           <p className="text-xs text-gray-500 uppercase mb-1">Email</p>
           <p className="text-sm font-medium">{user.email}</p>
         </div>
+
         <div>
           <p className="text-xs text-gray-500 uppercase mb-1">User ID</p>
           <p className="text-xs text-gray-600">{user.id}</p>
