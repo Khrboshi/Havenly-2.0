@@ -1,31 +1,12 @@
+// components/Header.jsx
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 import { User } from "lucide-react";
 
 export default function Header() {
   const pathname = usePathname();
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const check = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    check();
-    window.addEventListener("resize", check);
-
-    return () => {
-      window.removeEventListener("resize", check);
-    };
-  }, []);
-
-  // Hide header on small screens where BottomNav is used
-  if (isMobile) return null;
 
   const navItems = [
     { href: "/", label: "Home" },
@@ -46,7 +27,7 @@ export default function Header() {
           Havenly
         </Link>
 
-        {/* NAV LINKS */}
+        {/* NAV LINKS (desktop only) */}
         <nav className="hidden md:flex items-center gap-6">
           {navItems.map(({ href, label }) => {
             const isActive = pathname === href;
@@ -66,10 +47,11 @@ export default function Header() {
           })}
         </nav>
 
-        {/* PROFILE ICON */}
+        {/* PROFILE ICON (always visible) */}
         <Link
           href="/profile"
           className="text-brand-dark hover:text-brand transition"
+          aria-label="Profile"
         >
           <User size={26} strokeWidth={2.2} />
         </Link>
