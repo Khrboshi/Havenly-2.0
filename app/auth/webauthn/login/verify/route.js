@@ -1,22 +1,19 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { supabaseServer } from "@/lib/supabase/server";
 
 export async function POST(request) {
   const body = await request.json();
+  const supabase = await supabaseServer();
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    { cookies }
+  const { data, error } = await supabase.auth.webauthn.verifyAuthentication(
+    body
   );
 
-  const { data, error } = await supabase.auth.webauthn.verifyAuthentication(body);
-
   if (error) {
+    console.error("WebAuthn verifyAuthentication error:", error);
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  // login success — cookies/session are now set
-  return NextResponse.json({ success: true });
+  // Session is persisted via cookies by Supabase
+  return NextResponse.json({ success: true, data });
 }
