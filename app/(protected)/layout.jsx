@@ -5,20 +5,18 @@ import { redirect } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BottomNav from "@/components/BottomNav";
-import { supabaseServer } from "@/lib/supabase/server";
+import { createServerSupabase } from "@/lib/supabase/server";
 
 export default async function ProtectedLayout({ children }) {
-  const supabase = await supabaseServer();
+  const supabase = await createServerSupabase();
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
-  if (!session?.user) {
-    redirect("/auth/login");
-  }
+  if (!session?.user) redirect("/auth/login");
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F7FBFA]">
+    <div className="min-h-screen flex flex-col bg-brand-bg">
       <Header />
       <main className="flex-1 w-full max-w-2xl mx-auto px-4 py-6 pb-28">
         {children}
