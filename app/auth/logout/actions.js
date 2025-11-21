@@ -1,17 +1,11 @@
 "use server";
 
-import { supabaseServer } from "@/lib/supabase/server";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 export async function logoutAction() {
-  const supabase = await supabaseServer();
-
-  try {
-    await supabase.auth.signOut();
-  } catch (error) {
-    console.error("Logout error:", error);
-    // Even if sign-out fails, we can still redirect – cookies may already be cleared
-  }
+  const supabase = await createServerSupabase();
+  await supabase.auth.signOut();
 
   redirect("/auth/login");
 }
