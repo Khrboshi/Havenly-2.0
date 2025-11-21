@@ -1,18 +1,16 @@
 export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
-import { supabaseServer } from "@/lib/supabase/server";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { ACHIEVEMENTS } from "@/lib/achievements";
 
 export default async function AchievementsPage() {
-  const supabase = await supabaseServer();
+  const supabase = await createServerSupabase();
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
-  if (!session?.user) {
-    redirect("/auth/login");
-  }
+  if (!session?.user) redirect("/auth/login");
 
   const userId = session.user.id;
 
@@ -21,26 +19,25 @@ export default async function AchievementsPage() {
     .select("achievement_key")
     .eq("user_id", userId);
 
-  const unlocked = new Set(data?.map((a) => a.achievement_key) || []);
+  const unlocked = new Set(data?.map(a => a.achievement_key) || []);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-[#0D7A7E]">Achievements</h1>
+      <h1 className="text-2xl font-bold text-brand-dark">Achievements</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {ACHIEVEMENTS.map((ach) => {
+        {ACHIEVEMENTS.map(ach => {
           const isUnlocked = unlocked.has(ach.key);
+
           return (
             <div
               key={ach.key}
               className={`p-4 rounded-xl border shadow-sm ${
-                isUnlocked ? "bg-white border-[#0D7A7E]" : "bg-gray-100"
+                isUnlocked ? "bg-white border-brand" : "bg-gray-100"
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className="text-3xl">
-                  {isUnlocked ? ach.emoji : "🔒"}
-                </span>
+                <span className="text-3xl">{isUnlocked ? ach.emoji : "🔒"}</span>
                 <div>
                   <h3 className="text-sm font-semibold">{ach.title}</h3>
                   <p className="text-xs text-gray-500">{ach.description}</p>
