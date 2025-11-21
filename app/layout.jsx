@@ -1,13 +1,14 @@
-import "../styles.css"; // Correct path
-import AddToHomeScreen from "@/components/AddToHomeScreen";
-import Navbar from "@/components/Navbar";
+import "./styles.css"; // Correct path
 
-export default function ProtectedLayout({ children }) {
+export const metadata = {
+  title: "Havenly",
+  description: "Mindful journaling & emotional wellness",
+};
+
+export default function RootLayout({ children }) {
   return (
-    <>
-      <Navbar />
-      <AddToHomeScreen />
-      <main>{children}</main>
-    </>
+    <html lang="en">
+      <body>{children}</body>
+    </html>
   );
 }
