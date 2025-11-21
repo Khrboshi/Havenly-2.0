@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   Home,
   SmilePlus,
@@ -13,10 +14,22 @@ import {
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Mobile only (client-safe)
-  const isMobile =
-    typeof window !== "undefined" && window.innerWidth < 768;
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const check = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    check();
+    window.addEventListener("resize", check);
+
+    return () => {
+      window.removeEventListener("resize", check);
+    };
+  }, []);
 
   if (!isMobile) return null;
 
@@ -37,13 +50,13 @@ export default function BottomNav() {
         return (
           <Link key={href} href={href}>
             <div
-              className={`w-7 h-7 transition ${
+              className={`w-7 h-7 flex items-center justify-center transition ${
                 isActive
                   ? "text-brand font-semibold"
-                  : "text-brand-dark opacity-50 hover:opacity-80"
+                  : "text-brand-dark opacity-60 hover:opacity-90"
               }`}
             >
-              <Icon size={26} strokeWidth={2.2} />
+              <Icon size={24} strokeWidth={2.2} />
             </div>
           </Link>
         );
