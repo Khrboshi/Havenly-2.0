@@ -1,21 +1,18 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { supabaseServer } from "@/lib/supabase/server";
 
 export async function POST(request) {
   const body = await request.json();
+  const supabase = await supabaseServer();
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    { cookies }
+  const { data, error } = await supabase.auth.webauthn.verifyRegistration(
+    body
   );
 
-  const { data, error } = await supabase.auth.webauthn.verifyRegistration(body);
-
   if (error) {
+    console.error("WebAuthn verifyRegistration error:", error);
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, data });
 }
