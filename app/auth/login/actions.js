@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export async function loginAction(formData) {
@@ -17,5 +18,6 @@ export async function loginAction(formData) {
     return { error: error.message };
   }
 
-  return { success: true };
+  // IMPORTANT: server-side redirect after successful login
+  redirect("/dashboard");
 }
