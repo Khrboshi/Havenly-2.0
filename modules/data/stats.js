@@ -1,6 +1,6 @@
 "use server";
 
-import { supabaseServer } from "@/lib/supabaseServer";
+import { createServerSupabase } from "@/lib/supabase/server";
 
 /**
  * Calculate a daily streak from mood entries
@@ -33,12 +33,23 @@ function calculateStreak(moodEntries) {
  */
 export async function getUserStats() {
   try {
-    const supabase = await supabaseServer();
+    const supabase = await createServerSupabase();
 
-    // Load authenticated session
     const {
       data: { session },
+      error: sessionError,
     } = await supabase.auth.getSession();
+
+    if (sessionError) {
+      console.error("Session error:", sessionError);
+      return {
+        latestMood: null,
+        recentMoods: [],
+        journalCount: 0,
+        reflectionCount: 0,
+        streak: 0,
+      };
+    }
 
     if (!session) {
       return {
@@ -52,38 +63,53 @@ export async function getUserStats() {
 
     const userId = session.user.id;
 
-    // --- Latest mood ---
-    const { data: latestMood } = await supabase
+    // Latest mood
+    const { data: latestMood, error: latestMoodError } = await supabase
       .from("moods")
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    // --- Last 14 days of moods ---
+    if (latestMoodError) {
+      console.error("Latest mood error:", latestMoodError);
+    }
+
+    // Last 14 days of moods
     const twoWeeksAgo = new Date(Date.now() - 14 * 86400000).toISOString();
 
-    const { data: recentMoods } = await supabase
+    const { data: recentMoods, error: recentError } = await supabase
       .from("moods")
       .select("*")
       .eq("user_id", userId)
       .gte("created_at", twoWeeksAgo)
       .order("created_at", { ascending: false });
 
-    // --- Journal count ---
-    const { count: journalCount } = await supabase
+    if (recentError) {
+      console.error("Recent moods error:", recentError);
+    }
+
+    // Journal count
+    const { count: journalCount, error: journalError } = await supabase
       .from("journal")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId);
 
-    // --- Reflection count ---
-    const { count: reflectionCount } = await supabase
+    if (journalError) {
+      console.error("Journal count error:", journalError);
+    }
+
+    // Reflection count
+    const { count: reflectionCount, error: reflectionError } = await supabase
       .from("reflections")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId);
 
-    // --- Streak ---
+    if (reflectionError) {
+      console.error("Reflection count error:", reflectionError);
+    }
+
     const streak = calculateStreak(recentMoods || []);
 
     return {
