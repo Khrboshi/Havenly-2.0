@@ -1,49 +1,100 @@
 /* BRAND VARIABLES */
 :root {
-  --brand-primary: #4CA7A3;
-  --brand-primary-light: #76C5C0;
-  --brand-primary-dark: #2E837F;
-  --brand-bg: #F7FBFA;
-  --brand-text: #1F2937;
+  /* Primary Brand */
+  --brand-primary: #3CA9A2;
+  --brand-primary-light: #83D5CF;
+  --brand-primary-dark: #277E7A;
 
-  --accent-yellow: #F9D976;
-  --accent-peach: #F6B8A1;
-  --accent-pink: #FCE7F3;
+  /* Background */
+  --brand-bg: #F6FAF9;
 
+  /* Neutrals */
+  --gray-900: #1F2937;
+  --gray-700: #374151;
+  --gray-500: #6B7280;
+  --gray-300: #D1D5DB;
+  --gray-100: #F3F4F6;
+  --gray-50:  #F9FAFB;
+
+  /* Accents */
+  --accent-yellow: #FAD978;
+  --accent-peach:  #F4B6A0;
+  --accent-rose:   #F8D5E2;
+
+  /* Semantic */
+  --success: #4CAF92;
+  --warning: #FFB856;
+  --danger:  #E87070;
+
+  /* Radius */
+  --radius-xl: 24px;
   --radius-lg: 16px;
   --radius-md: 12px;
   --radius-sm: 8px;
+  --radius-xs: 4px;
 
+  /* Typography */
   --font-sans: 'Inter', 'SF Pro Rounded', system-ui, sans-serif;
 
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+
+  /* Motion */
   --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* UNIVERSAL CARD STYLE */
+/* CARD */
 .h-card {
   background: white;
   border-radius: var(--radius-lg);
-  padding: 1.25rem;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  padding: 1.5rem;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.02);
 }
 
 /* BUTTONS */
 .btn-primary {
   background: var(--brand-primary);
   color: white;
-  padding: 0.75rem 1.25rem;
+  padding: 0.85rem 1.35rem;
   border-radius: var(--radius-md);
   font-weight: 600;
-  transition: background 0.25s var(--ease-smooth);
+  transition: background 0.3s var(--ease-smooth), transform 0.2s ease;
   display: inline-block;
 }
+
 .btn-primary:hover {
   background: var(--brand-primary-dark);
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: white;
+  border: 1px solid var(--brand-primary);
+  color: var(--brand-primary-dark);
+  padding: 0.8rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  transition: all 0.25s var(--ease-smooth);
+}
+
+.btn-secondary:hover {
+  background: var(--brand-primary-light);
+  color: white;
 }
 
 /* SECTION TITLES */
 .section-title {
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: var(--text-3xl);
+  font-weight: 700;
   color: var(--brand-primary-dark);
+  text-align: center;
+  margin-bottom: 1.25rem;
 }
