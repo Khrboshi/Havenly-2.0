@@ -4,10 +4,10 @@ import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 export async function middleware(req) {
   const res = NextResponse.next();
 
-  // Attach Supabase middleware client (handles session cookies)
+  // Attach Supabase middleware client (handles session cookies and refresh)
   const supabase = createMiddlewareClient({ req, res });
 
-  // This line ensures cookies are updated properly
+  // Ensures auth cookies are kept in sync / refreshed
   await supabase.auth.getSession();
 
   return res;
@@ -22,6 +22,6 @@ export const config = {
     "/reflect/:path*",
     "/journal/:path*",
     "/achievements/:path*",
-    "/insights/:path*",
-  ],
+    "/insights/:path*"
+  ]
 };
