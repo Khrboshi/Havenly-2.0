@@ -1,13 +1,7 @@
-import { cn } from "@/lib/utils";
-
-export default function Card({ children, className }) {
+// components/ui/Card.jsx
+export default function Card({ children, className = "" }) {
   return (
-    <div
-      className={cn(
-        "bg-white border border-gray-200 rounded-xl p-5 shadow-sm",
-        className
-      )}
-    >
+    <div className={`bg-white border rounded-xl p-5 shadow-card ${className}`}>
       {children}
     </div>
   );
