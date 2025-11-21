@@ -14,12 +14,12 @@ export default function HomePage() {
 
         <p className="text-gray-600 max-w-md mx-auto mb-10">
           Your personal wellbeing companion. Build clarity, reduce stress,
-          and form gentle habits that support your mental and emotional health.
+          and form gentle daily habits that support your mental and emotional health.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link href="/auth/signup" className="btn-primary">
-            Start Free — No Account Needed
+            Start Free — Create Your Account
           </Link>
           <Link href="/auth/login" className="text-brand-dark underline text-sm">
             Log In
