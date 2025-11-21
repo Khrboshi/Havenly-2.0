@@ -1,43 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { logoutAction } from "@/app/auth/logout/actions";
 
 export default function Navbar() {
-  const pathname = usePathname();
-
-  const links = [
-    { name: "Dashboard", href: "/dashboard" },
-    { name: "Journal", href: "/journal" },
-    { name: "Mood", href: "/mood" },
-    { name: "Insights", href: "/insights" },
-    { name: "Profile", href: "/profile" },
-  ];
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <nav className="w-full bg-white shadow-sm border-b">
-      <div className="mx-auto max-w-6xl flex items-center justify-between px-6 py-4">
-        <Link href="/dashboard" className="text-xl font-bold text-teal-700">
-          Havenly
-        </Link>
+    <nav className="w-full bg-white border-b px-6 py-4 flex items-center justify-between">
+      <Link href="/dashboard" className="text-xl font-bold text-teal-700">
+        Havenly
+      </Link>
 
-        <div className="flex items-center gap-6">
-          {links.map((link) => {
-            const active = pathname === link.href;
+      <div className="hidden md:flex space-x-8">
+        <Link href="/dashboard">Dashboard</Link>
+        <Link href="/journal">Journal</Link>
+        <Link href="/mood">Mood</Link>
+        <Link href="/insights">Insights</Link>
+        <Link href="/profile">Profile</Link>
 
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`text-sm font-medium ${
-                  active ? "text-teal-700" : "text-gray-600 hover:text-teal-600"
-                }`}
-              >
-                {link.name}
-              </Link>
-            );
-          })}
-        </div>
+        <form action={logoutAction}>
+          <button
+            type="submit"
+            className="text-red-600 hover:underline ml-4"
+          >
+            Logout
+          </button>
+        </form>
       </div>
     </nav>
   );
