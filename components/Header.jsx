@@ -2,14 +2,29 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, Info } from "lucide-react";
+import { useEffect, useState } from "react";
+import { User } from "lucide-react";
 
 export default function Header() {
   const pathname = usePathname();
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Hide header on mobile if BottomNav is visible
-  const isMobile =
-    typeof window !== "undefined" && window.innerWidth < 768;
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const check = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    check();
+    window.addEventListener("resize", check);
+
+    return () => {
+      window.removeEventListener("resize", check);
+    };
+  }, []);
+
+  // Hide header on small screens where BottomNav is used
   if (isMobile) return null;
 
   const navItems = [
@@ -23,9 +38,11 @@ export default function Header() {
   return (
     <header className="w-full bg-white border-b shadow-sm">
       <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-
         {/* BRAND / LOGO */}
-        <Link href="/" className="text-2xl font-bold tracking-tight text-brand-dark">
+        <Link
+          href="/"
+          className="text-2xl font-bold tracking-tight text-brand-dark"
+        >
           Havenly
         </Link>
 
