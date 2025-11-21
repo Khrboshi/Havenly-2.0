@@ -3,7 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 export async function POST(request) {
-  const body = await request.json();
+  const { email } = await request.json();
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -12,7 +12,7 @@ export async function POST(request) {
   );
 
   const { data, error } = await supabase.auth.webauthn.createAuthentication({
-    email: body.email,
+    email,
   });
 
   if (error) {
