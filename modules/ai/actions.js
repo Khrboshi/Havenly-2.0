@@ -1,6 +1,6 @@
 "use server";
 
-import { supabaseServer } from "@/lib/supabaseServer";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { safeGroq } from "@/lib/groq";
 
 /**
@@ -9,12 +9,18 @@ import { safeGroq } from "@/lib/groq";
  */
 export async function getMoodTrend() {
   try {
-    const supabase = await supabaseServer();
+    const supabase = await createServerSupabase();
 
     // Load authenticated session
     const {
       data: { session },
+      error: sessionError,
     } = await supabase.auth.getSession();
+
+    if (sessionError) {
+      console.error("Session load error:", sessionError);
+      return { forecast: "Unable to load your session. Please log in again." };
+    }
 
     if (!session) {
       return { forecast: "Please log in to view your emotional trend." };
@@ -30,17 +36,17 @@ export async function getMoodTrend() {
       .order("created_at", { ascending: true });
 
     if (error) {
-      console.error("Supabase error:", error);
+      console.error("Supabase moods error:", error);
       return { forecast: "Unable to analyze mood history." };
     }
 
     if (!moods || moods.length < 2) {
       return {
-        forecast: "Not enough mood data yet. Try logging your mood for a few days.",
+        forecast:
+          "Not enough mood data yet. Try logging your mood for a few days.",
       };
     }
 
-    // Cleaned prompt for Groq
     const prompt = `
 You are a compassionate AI wellbeing analyst.
 
