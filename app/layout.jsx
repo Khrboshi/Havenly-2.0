@@ -1,21 +1,13 @@
-import "./styles.css";
-import "./branding.css";
-import { Inter } from "next/font/google";
+import "../styles.css"; // Correct path
+import AddToHomeScreen from "@/components/AddToHomeScreen";
+import Navbar from "@/components/Navbar";
 
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-});
-
-export const metadata = {
-  title: "Havenly",
-  description: "Your space for emotional wellbeing and daily reflection.",
-};
-
-export default function RootLayout({ children }) {
+export default function ProtectedLayout({ children }) {
   return (
-    <html lang="en" className={inter.className}>
-      <body>{children}</body>
-    </html>
+    <>
+      <Navbar />
+      <AddToHomeScreen />
+      <main>{children}</main>
+    </>
   );
 }
