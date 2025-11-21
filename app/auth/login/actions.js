@@ -1,29 +1,21 @@
 "use server";
 
-import { supabaseServer } from "@/lib/supabaseServer";
-import { redirect } from "next/navigation";
+import { supabaseServer } from "@/lib/supabase/server";
 
 export async function loginAction(formData) {
+  const supabase = await supabaseServer();
+
   const email = formData.get("email");
   const password = formData.get("password");
 
-  if (!email || !password) {
-    return { error: "Email and password are required." };
-  }
-
-  // ✅ IMPORTANT: await the async helper
-  const supabase = await supabaseServer();
-
   const { error } = await supabase.auth.signInWithPassword({
-    email: String(email),
-    password: String(password),
+    email,
+    password,
   });
 
   if (error) {
-    console.error("Login error:", error);
-    return { error: "Invalid email or password." };
+    return { success: false, message: error.message };
   }
 
-  // On success redirect into the protected area
-  redirect("/dashboard");
+  return { success: true };
 }
