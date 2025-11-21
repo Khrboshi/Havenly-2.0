@@ -1,28 +1,38 @@
 "use server";
 
-import { supabaseServer } from "@/lib/supabaseServer";
+import { createServerSupabase } from "@/lib/supabase/server";
 
 /**
  * Save a journal entry (server-side, authenticated)
  */
 export async function saveJournal(content) {
   try {
-    const supabase = await supabaseServer();
+    const supabase = await createServerSupabase();
 
-    // Fetch session to get user ID
     const {
       data: { session },
+      error: sessionError,
     } = await supabase.auth.getSession();
+
+    if (sessionError) {
+      console.error("Journal session error:", sessionError);
+      return { error: "Session error" };
+    }
 
     if (!session) {
       return { error: "Not authenticated" };
     }
 
     const userId = session.user.id;
+    const trimmed = String(content || "").trim();
+
+    if (!trimmed) {
+      return { error: "Content cannot be empty" };
+    }
 
     const { error } = await supabase.from("journal").insert({
       user_id: userId,
-      content,
+      content: trimmed,
     });
 
     if (error) {
@@ -42,11 +52,17 @@ export async function saveJournal(content) {
  */
 export async function getJournalCount() {
   try {
-    const supabase = await supabaseServer();
+    const supabase = await createServerSupabase();
 
     const {
       data: { session },
+      error: sessionError,
     } = await supabase.auth.getSession();
+
+    if (sessionError) {
+      console.error("Journal count session error:", sessionError);
+      return 0;
+    }
 
     if (!session) return 0;
 
