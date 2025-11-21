@@ -11,14 +11,12 @@ export async function POST(request) {
     { cookies }
   );
 
-  const { data, error } = await supabase.auth.webauthn.verifyAuthentication(
-    body
-  );
+  const { data, error } = await supabase.auth.webauthn.verifyAuthentication(body);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  // user logged in successfully → session saved by cookies
+  // login success — cookies/session are now set
   return NextResponse.json({ success: true });
 }
