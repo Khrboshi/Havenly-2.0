@@ -1,18 +1,23 @@
 "use server";
 
-import { supabaseServer } from "@/lib/supabaseServer";
+import { createServerSupabase } from "@/lib/supabase/server";
 
 /**
  * Save mood score (server-side, authenticated)
  */
 export async function saveMood(score) {
   try {
-    const supabase = await supabaseServer();
+    const supabase = await createServerSupabase();
 
-    // Get the current authenticated session
     const {
       data: { session },
+      error: sessionError,
     } = await supabase.auth.getSession();
+
+    if (sessionError) {
+      console.error("Mood session error:", sessionError);
+      return { error: "Session error" };
+    }
 
     if (!session) {
       return { error: "Not authenticated" };
@@ -20,9 +25,14 @@ export async function saveMood(score) {
 
     const userId = session.user.id;
 
+    const numericScore = Number(score);
+    if (!Number.isFinite(numericScore) || numericScore < 1 || numericScore > 5) {
+      return { error: "Invalid score" };
+    }
+
     const { error } = await supabase.from("moods").insert({
       user_id: userId,
-      score,
+      score: numericScore,
     });
 
     if (error) {
@@ -42,11 +52,17 @@ export async function saveMood(score) {
  */
 export async function getMoodHistory(limit = 30) {
   try {
-    const supabase = await supabaseServer();
+    const supabase = await createServerSupabase();
 
     const {
       data: { session },
+      error: sessionError,
     } = await supabase.auth.getSession();
+
+    if (sessionError) {
+      console.error("Mood history session error:", sessionError);
+      return [];
+    }
 
     if (!session) return [];
 
