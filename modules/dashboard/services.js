@@ -1,21 +1,31 @@
-import { supabase } from "@/lib/supabase";
+"use server";
+
+import { createServerSupabase } from "@/lib/supabase/server";
 import { logError } from "@/lib/errors";
 
 export async function getDashboardStats() {
   try {
-    const { data: moodData } = await supabase
+    const supabase = await createServerSupabase();
+
+    const { data: moodData, error: moodError } = await supabase
       .from("moods")
       .select("score, created_at")
       .order("created_at", { ascending: false })
-      .limit(10); // Keep recent history for AI
+      .limit(10);
 
-    const { count: journalCount } = await supabase
+    if (moodError) throw moodError;
+
+    const { count: journalCount, error: journalError } = await supabase
       .from("journal")
       .select("*", { count: "exact", head: true });
 
-    const { count: reflectionCount } = await supabase
+    if (journalError) throw journalError;
+
+    const { count: reflectionCount, error: reflectionError } = await supabase
       .from("reflections")
       .select("*", { count: "exact", head: true });
+
+    if (reflectionError) throw reflectionError;
 
     return {
       recentMoods: moodData || [],
