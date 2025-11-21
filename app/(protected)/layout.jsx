@@ -1,13 +1,14 @@
-import "../../globals.css";
-import Header from "@/components/Header";
+import "../styles.css"; // Correct relative path (protected → app)
+
 import AddToHomeScreen from "@/components/AddToHomeScreen";
+import Navbar from "@/components/Navbar";
 
 export default function ProtectedLayout({ children }) {
   return (
-    <div>
-      <Header />
+    <>
+      <Navbar />
       <AddToHomeScreen />
-      <main className="pt-20 max-w-3xl mx-auto px-4">{children}</main>
-    </div>
+      <main>{children}</main>
+    </>
   );
 }
