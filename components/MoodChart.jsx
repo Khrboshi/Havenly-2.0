@@ -18,12 +18,20 @@ ChartJS.register(
   Tooltip
 );
 
-export default function MoodChart({ moods }) {
+export default function MoodChart({ moods = [] }) {
+  if (!moods.length) {
+    return (
+      <p className="text-xs text-gray-500">
+        No mood data yet. Log your mood to see your trends here.
+      </p>
+    );
+  }
+
   const labels = moods.map((m) =>
     new Date(m.created_at).toLocaleDateString()
   );
 
-  const values = moods.map((m) => m.mood_value);
+  const values = moods.map((m) => m.mood_value ?? m.score ?? 0);
 
   const data = {
     labels,
@@ -43,6 +51,13 @@ export default function MoodChart({ moods }) {
     responsive: true,
     scales: {
       y: { min: 1, max: 10, ticks: { stepSize: 1 } },
+    },
+    plugins: {
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `Mood: ${ctx.parsed.y}`,
+        },
+      },
     },
   };
 
