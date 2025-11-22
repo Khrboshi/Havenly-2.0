@@ -1,57 +1,66 @@
-export const dynamic = "force-dynamic";
-
-import { createServerSupabase } from "@/lib/supabase/server";
+import { getUserStats } from "@/modules/data/stats";
+import { getMoodTrend } from "@/modules/ai/actions";
+import MoodChart from "@/components/MoodChart";
 
 export default async function DashboardPage() {
-  const supabase = await createServerSupabase();
+  const stats = await getUserStats();
+  const aiTrend = await getMoodTrend();
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  const user = session?.user;
+  const latestScore =
+    stats?.latestMood?.score ?? stats?.latestMood?.mood ?? null;
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-teal-700">
-        Welcome back, {user.email?.split("@")[0]}
-      </h1>
+    <div className="space-y-8 p-4 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold text-[#0D7A7E]">Welcome Back</h1>
 
-      <p className="text-gray-600">
-        Your personalized wellbeing overview.
-      </p>
+      {/* Latest Mood */}
+      <section className="bg-white p-4 rounded-lg shadow">
+        <h2 className="font-semibold text-lg mb-2">Your Latest Mood</h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <a
-          href="/journal"
-          className="p-6 bg-white rounded-lg shadow hover:shadow-md border"
-        >
-          <h2 className="font-bold text-teal-700 mb-2">Daily Journal</h2>
-          <p className="text-sm text-gray-600">
-            Write your reflection for today.
+        {latestScore != null ? (
+          <p className="text-gray-700">
+            Your latest recorded mood is:
+            <span className="ml-2 font-semibold text-[#0D7A7E]">
+              {latestScore} / 5
+            </span>
           </p>
-        </a>
+        ) : (
+          <p className="text-gray-500">You haven’t logged any moods yet.</p>
+        )}
+      </section>
 
-        <a
-          href="/mood"
-          className="p-6 bg-white rounded-lg shadow hover:shadow-md border"
-        >
-          <h2 className="font-bold text-teal-700 mb-2">Mood Tracking</h2>
-          <p className="text-sm text-gray-600">
-            Log how you feel in seconds.
-          </p>
-        </a>
+      {/* Mood Streak */}
+      <section className="bg-white p-4 rounded-lg shadow">
+        <h2 className="font-semibold text-lg mb-2">Daily Streak</h2>
+        <p className="text-gray-700">
+          You have logged moods for
+          <span className="ml-2 font-semibold text-[#0D7A7E]">
+            {stats?.streak ?? 0}{" "}
+            {(stats?.streak ?? 0) === 1 ? "day" : "days"}
+          </span>{" "}
+          in a row.
+        </p>
+      </section>
 
-        <a
-          href="/insights"
-          className="p-6 bg-white rounded-lg shadow hover:shadow-md border"
-        >
-          <h2 className="font-bold text-teal-700 mb-2">Insights</h2>
-          <p className="text-sm text-gray-600">
-            Your trends at a glance.
-          </p>
-        </a>
-      </div>
+      {/* Mood Trend (chart + AI text) */}
+      <section className="bg-white p-4 rounded-lg shadow space-y-4">
+        <h2 className="font-semibold text-lg">Mood Trend</h2>
+        <MoodChart moods={stats?.recentMoods ?? []} />
+        <p className="text-gray-700 text-sm">
+          {aiTrend?.forecast || "No AI mood trend available yet."}
+        </p>
+      </section>
+
+      {/* Activity Summary */}
+      <section className="bg-white p-4 rounded-lg shadow">
+        <h2 className="font-semibold text-lg mb-2">Your Activity Summary</h2>
+
+        <ul className="text-gray-700 space-y-1">
+          <li>Journal Entries: {stats?.journalCount ?? 0}</li>
+          <li>Reflections: {stats?.reflectionCount ?? 0}</li>
+          <li>Mood Entries (recent): {stats?.recentMoods?.length ?? 0}</li>
+        </ul>
+      </section>
     </div>
   );
 }
