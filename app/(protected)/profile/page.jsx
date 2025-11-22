@@ -1,3 +1,4 @@
+// app/(protected)/profile/page.jsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -39,12 +40,14 @@ export default function ProfilePage() {
 
       <div className="bg-white border rounded-lg p-4 shadow-sm">
         <p className="text-gray-600 text-sm mb-1">Email</p>
-        <p className="text-[#0D7A7E] font-medium">{user?.email ?? "Loading…"}</p>
+        <p className="text-[#0D7A7E] font-medium">
+          {user?.email ?? "Loading…"}
+        </p>
       </div>
 
       <button
         onClick={logout}
-        className="w-full py-3 bg-red-500 text-white rounded-lg hover:bg-red-600"
+        className="w-full py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg transition"
       >
         Log Out
       </button>
