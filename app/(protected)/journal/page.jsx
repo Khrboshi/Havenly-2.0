@@ -13,19 +13,22 @@ export default function JournalPage() {
   const [error, setError] = useState("");
 
   async function save() {
-    if (!entry.trim()) return;
+    if (!entry.trim() || saving) return;
 
     setSaving(true);
     setSaved(false);
     setError("");
 
     try {
-      const success = await saveJournal(entry.trim());
-      if (!success) throw new Error("Failed to save entry.");
+      const ok = await saveJournal(entry.trim());
 
-      setEntry("");
-      setSaved(true);
-    } catch (err) {
+      if (!ok || ok?.error) {
+        setError("Something went wrong while saving. Please try again.");
+      } else {
+        setEntry("");
+        setSaved(true);
+      }
+    } catch {
       setError("Something went wrong. Please try again.");
     } finally {
       setSaving(false);
@@ -42,15 +45,16 @@ export default function JournalPage() {
       <section>
         <h2 className="text-xl font-semibold text-[#0D7A7E]">Journal</h2>
         <p className="text-gray-600 text-sm mt-1">
-          Write your thoughts, feelings, or anything on your mind.
+          A quiet place to write whatever is on your mind — worries,
+          gratitude, observations, or small moments from your day.
         </p>
       </section>
 
       <textarea
         value={entry}
         onChange={(e) => setEntry(e.target.value)}
-        placeholder="Start writing here..."
-        rows={6}
+        placeholder="Start writing here…"
+        rows={8}
         className="w-full p-4 rounded-lg border border-gray-300 shadow-sm
                    focus:outline-none focus:ring-2 focus:ring-[#0D7A7E] transition"
       />
@@ -64,17 +68,17 @@ export default function JournalPage() {
             : "bg-[#0D7A7E] hover:bg-[#096064]"
         }`}
       >
-        {saving ? "Saving…" : "Save Entry"}
+        {saving ? "Saving…" : "Save entry"}
       </button>
 
       {saved && (
-        <p className="text-green-600 text-center text-sm mt-3">
+        <p className="text-green-600 text-center text-sm mt-2">
           Your journal entry has been saved.
         </p>
       )}
 
       {error && (
-        <p className="text-red-600 text-center text-sm mt-3">{error}</p>
+        <p className="text-red-600 text-center text-sm mt-2">{error}</p>
       )}
     </motion.div>
   );
