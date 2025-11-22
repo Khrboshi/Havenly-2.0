@@ -1,6 +1,6 @@
-// app/(protected)/layout.jsx
+--- FILE: app/(protected)/layout.jsx ---
 
-import { supabaseServer } from "@/lib/supabaseServer";
+import { supabaseServer } from "@/lib/supabaseServer.js";
 import { redirect } from "next/navigation";
 import BottomNav from "@/components/BottomNav";
 
@@ -17,10 +17,9 @@ export default async function ProtectedLayout({ children }) {
 
   return (
     <div className="min-h-screen w-full pb-20">
-      {/* Protected content */}
       {children}
 
-      {/* Mobile bottom navigation (hidden on md+ inside component) */}
+      {/* Mobile bottom navigation */}
       <BottomNav />
     </div>
   );
