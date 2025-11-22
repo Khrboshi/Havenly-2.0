@@ -1,6 +1,6 @@
-// app/layout.jsx
+--- FILE: app/layout.jsx ---
 
-import "@/app/globals.css";
+import "./styles.css";
 import { Inter } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -17,14 +17,17 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} bg-[#F7FBFA] text-gray-900`}>
-        {/* Global toaster for notifications */}
+
+        {/* Global toast notifications */}
         <SonnerToaster />
 
         <div className="min-h-screen flex flex-col">
           <Header />
+
           <main className="flex-1 w-full mx-auto max-w-3xl px-4 py-6">
             {children}
           </main>
+
           <Footer />
         </div>
       </body>
