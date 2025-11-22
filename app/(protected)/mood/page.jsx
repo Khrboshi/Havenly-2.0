@@ -1,51 +1,70 @@
+"use client";
+
 export const dynamic = "force-dynamic";
 
-import { createServerSupabase } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import { useState } from "react";
+import { saveMood } from "@/modules/mood/services";
+import { motion } from "framer-motion";
+import { fadeInUp } from "@/lib/animations";
 
-export default async function MoodPage() {
-  const supabase = await createServerSupabase();
+const moodOptions = [
+  { value: 1, label: "😞 Very Low" },
+  { value: 2, label: "😒 Low" },
+  { value: 3, label: "😐 Neutral" },
+  { value: 4, label: "🙂 Good" },
+  { value: 5, label: "😄 Great" },
+];
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+export default function MoodPage() {
+  const [selectedMood, setSelectedMood] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  if (!session?.user) redirect("/auth/login");
+  async function save() {
+    if (!selectedMood) return;
 
-  async function saveMood(formData) {
-    "use server";
+    setSaving(true);
+    setSaved(false);
 
-    const supabase = await createServerSupabase();
+    const response = await saveMood(selectedMood);
 
-    await supabase.from("mood_logs").insert({
-      user_id: session.user.id,
-      mood: formData.get("mood"),
-    });
+    setSaving(false);
+
+    if (!response?.error) {
+      setSelectedMood(null);
+      setSaved(true);
+    }
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-[#0D7A7E]">Mood Tracking</h1>
-      <p className="text-gray-600 mb-4">Track how you're feeling today.</p>
+    <motion.div variants={fadeInUp} initial="hidden" animate="show" className="space-y-6">
+      <section>
+        <h2 className="text-xl font-semibold text-[#0D7A7E]">How are you feeling?</h2>
+      </section>
 
-      <form action={saveMood} className="space-y-4">
-        <select
-          name="mood"
-          required
-          className="p-3 border rounded-lg"
-        >
-          <option value="">Select your mood</option>
-          <option value="happy">Happy</option>
-          <option value="okay">Okay</option>
-          <option value="sad">Sad</option>
-          <option value="stressed">Stressed</option>
-          <option value="grateful">Grateful</option>
-        </select>
+      <div className="grid grid-cols-1 gap-4">
+        {moodOptions.map((mood) => (
+          <button
+            key={mood.value}
+            onClick={() => setSelectedMood(mood.value)}
+            className={`p-4 rounded-lg border shadow-sm text-left ${
+              selectedMood === mood.value ? "border-[#0D7A7E] bg-[#E6F4F3]" : "border-gray-200 bg-white"
+            }`}
+          >
+            <span className="text-xl">{mood.label}</span>
+          </button>
+        ))}
+      </div>
 
-        <button className="px-6 py-3 bg-teal-700 text-white rounded-lg">
-          Save Mood Log
-        </button>
-      </form>
-    </div>
+      <button
+        onClick={save}
+        disabled={!selectedMood || saving}
+        className="w-full py-3 bg-[#0D7A7E] text-white rounded-lg"
+      >
+        {saving ? "Saving…" : "Save Mood"}
+      </button>
+
+      {saved && <p className="text-green-600 text-center text-sm">Mood saved!</p>}
+    </motion.div>
   );
 }
