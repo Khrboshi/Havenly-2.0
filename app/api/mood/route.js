@@ -1,39 +1,38 @@
+// app/api/mood/route.js
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 
-export async function POST(req) {
-  const supabase = await supabaseServer();
+export async function POST(request) {
+  const supabase = supabaseServer();
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const body = await req.json();
-  const rawMood = body?.score ?? body?.mood;
+  const body = await request.json();
+  const score = body?.score;
 
-  // Normalize to a number
-  const score = Number(rawMood);
-
-  if (!Number.isFinite(score)) {
-    return NextResponse.json({ error: "Valid mood score required" }, { status: 400 });
+  if (typeof score !== "number") {
+    return NextResponse.json({ error: "Invalid score" }, { status: 400 });
   }
 
   const { error } = await supabase.from("moods").insert({
-    user_id: session.user.id,
+    user_id: user.id,
     score,
   });
 
   if (error) {
-    console.error("Mood insert error:", error);
     return NextResponse.json(
-      { error: "Database insert failed" },
+      { error: "Failed to save mood" },
       { status: 500 }
     );
   }
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ ok: true });
 }
