@@ -1,25 +1,27 @@
-import "../styles.css";
-import Navbar from "@/components/Navbar";
-import { createServerSupabase } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+// app/(protected)/layout.jsx
 
-export const dynamic = "force-dynamic";
+import { supabaseServer } from "@/lib/supabaseServer";
+import { redirect } from "next/navigation";
+import BottomNav from "@/components/BottomNav";
 
 export default async function ProtectedLayout({ children }) {
-  const supabase = await createServerSupabase();
+  const supabase = await supabaseServer();
 
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
-  if (!session?.user) {
+  if (!session) {
     redirect("/auth/login");
   }
 
   return (
-    <div className="min-h-screen bg-[#F7FBFA]">
-      <Navbar />
-      <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>
+    <div className="min-h-screen w-full pb-20">
+      {/* Protected content */}
+      {children}
+
+      {/* Mobile bottom navigation (hidden on md+ inside component) */}
+      <BottomNav />
     </div>
   );
 }
