@@ -1,38 +1,38 @@
+// app/api/reflect/route.js
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 
-export async function POST(req) {
-  const supabase = await supabaseServer();
+export async function POST(request) {
+  const supabase = supabaseServer();
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // User not logged in
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  // Parse request body
-  const { question, answer } = await req.json();
+  const body = await request.json();
+  const text = body?.text;
 
-  if (!answer || !answer.trim()) {
-    return NextResponse.json({ error: "Answer required" }, { status: 400 });
+  if (!text || typeof text !== "string") {
+    return NextResponse.json({ error: "Invalid reflection" }, { status: 400 });
   }
 
   const { error } = await supabase.from("reflections").insert({
-    user_id: session.user.id,
-    question: question || null,
-    answer,
+    user_id: user.id,
+    text,
   });
 
   if (error) {
-    console.error("Reflection insert error:", error);
     return NextResponse.json(
-      { error: "Database insert failed" },
+      { error: "Failed to save reflection" },
       { status: 500 }
     );
   }
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ ok: true });
 }
