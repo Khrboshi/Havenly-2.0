@@ -1,26 +1,53 @@
-export const dynamic = "force-dynamic";
+"use client";
 
-import { createServerSupabase } from "@/lib/supabase/server";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getUserProfile, logoutUser } from "@/modules/profile/services";
+import { motion } from "framer-motion";
+import { fadeInUp } from "@/lib/animations";
 
-export default async function ProfilePage() {
-  const supabase = await createServerSupabase();
+export default function ProfilePage() {
+  const router = useRouter();
+  const [user, setUser] = useState(null);
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  useEffect(() => {
+    async function load() {
+      const u = await getUserProfile();
+      setUser(u);
+    }
+    load();
+  }, []);
 
-  const user = session?.user;
+  async function logout() {
+    const ok = await logoutUser();
+    if (ok) router.push("/auth/login");
+  }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-teal-700 mb-4">Profile</h1>
-      <p className="text-gray-600">Manage your account settings.</p>
-
-      <div className="mt-6 p-4 bg-white border shadow rounded-lg">
-        <p>
-          <strong>Email:</strong> {user.email}
+    <motion.div
+      variants={fadeInUp}
+      initial="hidden"
+      animate="show"
+      className="space-y-6"
+    >
+      <section>
+        <h2 className="text-xl font-semibold text-[#0D7A7E]">Profile</h2>
+        <p className="text-gray-600 text-sm mt-1">
+          Manage your account and settings.
         </p>
+      </section>
+
+      <div className="bg-white border rounded-lg p-4 shadow-sm">
+        <p className="text-gray-600 text-sm mb-1">Email</p>
+        <p className="text-[#0D7A7E] font-medium">{user?.email ?? "Loading…"}</p>
       </div>
-    </div>
+
+      <button
+        onClick={logout}
+        className="w-full py-3 bg-red-500 text-white rounded-lg hover:bg-red-600"
+      >
+        Log Out
+      </button>
+    </motion.div>
   );
 }
