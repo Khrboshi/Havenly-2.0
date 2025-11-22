@@ -1,23 +1,15 @@
-// app/(protected)/layout.jsx
-import { supabaseServer } from "@/lib/supabase/server";
+import { getServerSession } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import BottomNav from "@/components/BottomNav";
-
-export const dynamic = "force-dynamic";
 
 export default async function ProtectedLayout({ children }) {
-  const supabase = supabaseServer();
+  // Get authenticated session on the server
+  const session = await getServerSession();
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  // If no session → redirect to login
+  if (!session) {
+    redirect("/auth/login");
+  }
 
-  if (!session) redirect("/auth/login");
-
-  return (
-    <div className="min-h-screen w-full pb-20">
-      {children}
-      <BottomNav />
-    </div>
-  );
+  // If user is authenticated → render protected content
+  return <div className="min-h-screen w-full">{children}</div>;
 }
