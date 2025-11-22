@@ -1,3 +1,6 @@
+// app/(protected)/dashboard/page.jsx
+export const dynamic = "force-dynamic";
+
 import { getUserStats } from "@/modules/data/stats";
 import { getMoodTrend } from "@/modules/ai/actions";
 import MoodChart from "@/components/MoodChart";
@@ -7,21 +10,21 @@ export default async function DashboardPage() {
   const aiTrend = await getMoodTrend();
 
   const latestScore =
-    stats?.latestMood?.score ?? stats?.latestMood?.mood ?? null;
+    stats?.latestMood?.score ??
+    stats?.latestMood?.mood ??
+    null;
 
   return (
     <div className="space-y-8 p-4 max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold text-[#0D7A7E]">Welcome Back</h1>
 
-      {/* Latest Mood */}
       <section className="bg-white p-4 rounded-xl shadow">
         <h2 className="font-semibold text-lg mb-2">Your Latest Mood</h2>
-
         {latestScore != null ? (
           <p className="text-gray-700">
             Latest mood:
             <span className="ml-2 font-semibold text-[#0D7A7E]">
-              {latestScore} / 5
+              {latestScore}
             </span>
           </p>
         ) : (
@@ -29,7 +32,6 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      {/* Streak */}
       <section className="bg-white p-4 rounded-xl shadow">
         <h2 className="font-semibold text-lg mb-2">Daily Streak</h2>
         <p className="text-gray-700">
@@ -40,7 +42,6 @@ export default async function DashboardPage() {
         </p>
       </section>
 
-      {/* Mood Chart + AI Trend */}
       <section className="bg-white p-4 rounded-xl shadow space-y-4">
         <h2 className="font-semibold text-lg">Mood Trend</h2>
         <MoodChart moods={stats.recentMoods} />
@@ -49,7 +50,6 @@ export default async function DashboardPage() {
         </p>
       </section>
 
-      {/* Summary */}
       <section className="bg-white p-4 rounded-xl shadow">
         <h2 className="font-semibold text-lg mb-2">Activity Summary</h2>
         <ul className="text-gray-700 space-y-1">
