@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { fadeInUp } from "@/lib/animations";
 
 const moodOptions = [
-  { value: 1, label: "😞 Very Low" },
+  { value: 1, label: "😞 Very low" },
   { value: 2, label: "😒 Low" },
   { value: 3, label: "😐 Neutral" },
   { value: 4, label: "🙂 Good" },
@@ -21,23 +21,26 @@ export default function MoodPage() {
   const [error, setError] = useState("");
 
   async function save() {
-    if (!selectedMood) return;
+    if (!selectedMood || saving) return;
 
     setSaving(true);
     setSaved(false);
     setError("");
 
-    const response = await saveMood(selectedMood);
+    try {
+      const result = await saveMood(selectedMood);
 
-    if (response?.error) {
-      setError("Unable to save mood. Please try again.");
+      if (result?.error) {
+        setError("Unable to save mood. Please try again.");
+      } else {
+        setSaved(true);
+        setSelectedMood(null);
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
       setSaving(false);
-      return;
     }
-
-    setSaving(false);
-    setSaved(true);
-    setSelectedMood(null);
   }
 
   return (
@@ -52,11 +55,11 @@ export default function MoodPage() {
           How are you feeling today?
         </h2>
         <p className="text-gray-600 text-sm mt-1">
-          Select the option that best represents your current emotional state.
+          Choose the option that feels closest to your current emotional state.
         </p>
       </section>
 
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 gap-3">
         {moodOptions.map((mood) => {
           const active = selectedMood === mood.value;
           return (
@@ -67,10 +70,10 @@ export default function MoodPage() {
               className={`p-4 rounded-lg border shadow-sm text-left transition ${
                 active
                   ? "border-[#0D7A7E] bg-[#E6F4F3]"
-                  : "border-gray-200 bg-white"
+                  : "border-gray-200 bg-white hover:bg-gray-50"
               }`}
             >
-              <span className="text-xl">{mood.label}</span>
+              <span className="text-lg">{mood.label}</span>
             </button>
           );
         })}
@@ -85,17 +88,17 @@ export default function MoodPage() {
             : "bg-[#0D7A7E] hover:bg-[#096064]"
         }`}
       >
-        {saving ? "Saving…" : "Save Mood"}
+        {saving ? "Saving…" : "Save mood"}
       </button>
 
       {saved && (
-        <p className="text-green-600 text-center text-sm mt-3">
-          Your mood has been saved!
+        <p className="text-green-600 text-center text-sm mt-2">
+          Your mood has been saved.
         </p>
       )}
 
       {error && (
-        <p className="text-red-600 text-center text-sm mt-3">{error}</p>
+        <p className="text-red-600 text-center text-sm mt-2">{error}</p>
       )}
     </motion.div>
   );
