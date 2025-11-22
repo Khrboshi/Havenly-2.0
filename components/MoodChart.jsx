@@ -32,7 +32,12 @@ export default function MoodChart({ moods }) {
     new Date(m.created_at).toLocaleDateString()
   );
 
-  const values = moods.map((m) => m.mood_value ?? m.score ?? 0);
+  // Prefer `score`, fallback to `mood_value`
+  const values = moods.map((m) => {
+    if (typeof m.score === "number") return m.score;
+    if (typeof m.mood_value === "number") return m.mood_value;
+    return 0;
+  });
 
   const data = {
     labels,
@@ -40,8 +45,8 @@ export default function MoodChart({ moods }) {
       {
         label: "Mood",
         data: values,
-        borderColor: "#3B82F6",
-        backgroundColor: "rgba(59, 130, 246, 0.2)",
+        borderColor: "#0D7A7E",
+        backgroundColor: "rgba(13, 122, 126, 0.15)",
         tension: 0.3,
         pointRadius: 4,
       },
@@ -51,7 +56,7 @@ export default function MoodChart({ moods }) {
   const options = {
     responsive: true,
     scales: {
-      y: { min: 1, max: 10, ticks: { stepSize: 1 } },
+      y: { min: 1, max: 5, ticks: { stepSize: 1 } },
     },
   };
 
