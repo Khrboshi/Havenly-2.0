@@ -1,4 +1,4 @@
-import { supabaseServer } from "@/lib/supabaseServer.js";
+import { supabaseServer } from "@/lib/supabase/server.js";
 import { redirect } from "next/navigation";
 import BottomNav from "@/components/BottomNav";
 
