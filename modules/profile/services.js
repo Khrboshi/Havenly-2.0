@@ -1,8 +1,12 @@
-import { supabase } from "@/lib/supabase";
+"use client";
+
+import { supabaseBrowser } from "@/lib/supabase/browser";
 import { logError } from "@/lib/errors";
 
 export async function getUserProfile() {
   try {
+    const supabase = supabaseBrowser();
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -16,7 +20,10 @@ export async function getUserProfile() {
 
 export async function logoutUser() {
   try {
+    const supabase = supabaseBrowser();
     await supabase.auth.signOut();
+
+    // No need to manually clear sb-* cookies; Supabase handles that.
     return true;
   } catch (e) {
     logError("Logout error", e);
