@@ -1,6 +1,9 @@
-import { supabaseServer } from "@/lib/supabase/server.js";
+// app/(protected)/layout.jsx
+import { supabaseServer } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import BottomNav from "@/components/BottomNav";
+
+export const dynamic = "force-dynamic";
 
 export default async function ProtectedLayout({ children }) {
   const supabase = supabaseServer();
