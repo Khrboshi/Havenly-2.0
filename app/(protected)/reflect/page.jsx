@@ -9,7 +9,7 @@ import { fadeInUp } from "@/lib/animations";
 const questions = [
   "What is one thing you are grateful for today?",
   "What challenged you today?",
-  "What is one thing you could do tomorrow to feel better?",
+  "What is one thing you could do tomorrow to feel a little better?",
 ];
 
 export default function ReflectPage() {
@@ -19,30 +19,35 @@ export default function ReflectPage() {
   const [error, setError] = useState("");
 
   function updateAnswer(index, value) {
-    const updated = [...answers];
-    updated[index] = value;
-    setAnswers(updated);
+    setAnswers((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
   }
 
   async function submit() {
     const combined = answers.filter((a) => a.trim()).join("\n\n");
-    if (!combined.trim()) return;
+    if (!combined.trim() || saving) return;
 
     setSaving(true);
     setSaved(false);
     setError("");
 
-    const response = await saveReflection(combined);
+    try {
+      const result = await saveReflection(combined);
 
-    if (response?.error) {
-      setError("Unable to save your reflections. Please try again.");
+      if (result?.error) {
+        setError("Unable to save your reflections. Please try again.");
+      } else {
+        setSaved(true);
+        setAnswers(questions.map(() => ""));
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
       setSaving(false);
-      return;
     }
-
-    setSaving(false);
-    setSaved(true);
-    setAnswers(questions.map(() => ""));
   }
 
   return (
@@ -55,7 +60,8 @@ export default function ReflectPage() {
       <section>
         <h2 className="text-xl font-semibold text-[#0D7A7E]">Reflect</h2>
         <p className="text-gray-600 text-sm mt-1">
-          Take a moment to reflect on your day.
+          Use these prompts to gently check in with yourself and notice what
+          stood out today.
         </p>
       </section>
 
@@ -86,17 +92,17 @@ export default function ReflectPage() {
             : "bg-[#0D7A7E] hover:bg-[#096064]"
         }`}
       >
-        {saving ? "Saving…" : "Save Reflections"}
+        {saving ? "Saving…" : "Save reflections"}
       </button>
 
       {saved && (
-        <p className="text-green-600 text-center text-sm mt-3">
+        <p className="text-green-600 text-center text-sm mt-2">
           Your reflections have been saved.
         </p>
       )}
 
       {error && (
-        <p className="text-red-600 text-center text-sm mt-3">{error}</p>
+        <p className="text-red-600 text-center text-sm mt-2">{error}</p>
       )}
     </motion.div>
   );
