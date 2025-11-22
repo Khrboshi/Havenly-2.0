@@ -1,3 +1,4 @@
+// app/(protected)/achievements/page.jsx
 "use client";
 
 import { useEffect, useState } from "react";
