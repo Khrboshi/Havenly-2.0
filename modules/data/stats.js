@@ -1,7 +1,7 @@
 // modules/data/stats.js
 "use server";
 
-import { supabaseServer } from "@/lib/supabase/server.js";
+import { supabaseServer } from "@/lib/supabase/server";
 import { logError } from "@/lib/errors";
 
 export async function getUserStats() {
@@ -24,23 +24,20 @@ export async function getUserStats() {
 
     const userId = session.user.id;
 
-    // Recent moods
     const { data: recentMoods = [] } = await supabase
       .from("moods")
-      .select("score, created_at")
+      .select("score, mood, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(30);
 
     const latestMood = recentMoods?.[0] ?? null;
 
-    // Journal count
     const { count: journalCount = 0 } = await supabase
       .from("journal")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId);
 
-    // Reflection count
     const { count: reflectionCount = 0 } = await supabase
       .from("reflections")
       .select("*", { count: "exact", head: true })
