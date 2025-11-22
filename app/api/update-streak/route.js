@@ -1,42 +1,28 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
-import { checkStreakAchievements } from "@/lib/achievements";
+import { getAchievements } from "@/lib/achievements"; // updated
 
-export async function POST(req) {
-  const supabase = await supabaseServer();
+export async function POST() {
+  const supabase = supabaseServer();
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // Must be authenticated
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-  const { streak } = await req.json();
+  // streak calculation
+  const { data: moods } = await supabase
+    .from("moods")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(7);
 
-  if (typeof streak !== "number" || !Number.isFinite(streak)) {
-    return NextResponse.json(
-      { error: "Invalid streak value" },
-      { status: 400 }
-    );
-  }
+  const streak = moods?.length || 0;
 
-  const { error } = await supabase.from("streaks").upsert({
-    user_id: session.user.id,
-    streak,
-  });
+  // achievements check
+  const existing = await getAchievements(user.id);
 
-  if (error) {
-    console.error("Streak upsert error:", error);
-    return NextResponse.json(
-      { error: "Database update failed" },
-      { status: 500 }
-    );
-  }
-
-  const unlocked = await checkStreakAchievements(session.user.id, streak);
-
-  return NextResponse.json({ success: true, unlocked });
+  return NextResponse.json({ streak, achievements: existing });
 }
