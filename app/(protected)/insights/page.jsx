@@ -1,55 +1,50 @@
-export const dynamic = "force-dynamic";
-
-import { createServerSupabase } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import { getUserStats } from "@/modules/data/stats";
+import { getMoodTrend } from "@/modules/ai/actions";
 
 export default async function InsightsPage() {
-  const supabase = await createServerSupabase();
+  const stats = await getUserStats();
+  const aiTrend = await getMoodTrend();
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session?.user) redirect("/auth/login");
-
-  const { data: moods } = await supabase
-    .from("mood_logs")
-    .select("*")
-    .eq("user_id", session.user.id)
-    .order("created_at", { ascending: false });
-
-  const { data: journals } = await supabase
-    .from("journal_entries")
-    .select("*")
-    .eq("user_id", session.user.id)
-    .order("created_at", { ascending: false });
+  const latestMoodLabel =
+    stats?.latestMood?.mood ??
+    (stats?.latestMood?.score != null
+      ? `${stats.latestMood.score} / 5`
+      : null);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-[#0D7A7E]">Insights</h1>
-      <p className="text-gray-600">Visual summaries of your logs.</p>
+    <div className="space-y-8 p-4 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold text-[#0D7A7E]">Your Insights</h1>
 
-      <div className="space-y-4">
-        <h2 className="font-semibold text-lg">Recent Mood Logs</h2>
-        <ul className="space-y-2">
-          {moods?.map((m) => (
-            <li key={m.id} className="p-3 bg-white border rounded">
-              {m.mood} – {new Date(m.created_at).toLocaleString()}
-            </li>
-          ))}
-        </ul>
-      </div>
+      {/* Latest Mood */}
+      <section className="bg-white p-4 rounded-lg shadow">
+        <h2 className="font-semibold text-lg mb-2">Latest Mood</h2>
+        {latestMoodLabel ? (
+          <p className="text-gray-700">
+            Your most recent mood was:
+            <span className="font-semibold ml-2">{latestMoodLabel}</span>
+          </p>
+        ) : (
+          <p className="text-gray-500">No mood entries yet.</p>
+        )}
+      </section>
 
-      <div className="space-y-4">
-        <h2 className="font-semibold text-lg">Recent Journal Entries</h2>
-        <ul className="space-y-2">
-          {journals?.map((j) => (
-            <li key={j.id} className="p-3 bg-white border rounded">
-              {j.entry} – {new Date(j.created_at).toLocaleString()}
-            </li>
-          ))}
+      {/* Mood Trend (AI) */}
+      <section className="bg-white p-4 rounded-lg shadow">
+        <h2 className="font-semibold text-lg mb-2">Mood Trend (AI)</h2>
+        <p className="text-gray-700">
+          {aiTrend?.forecast || "No AI mood trend is available yet."}
+        </p>
+      </section>
+
+      {/* Journal & Reflection Stats */}
+      <section className="bg-white p-4 rounded-lg shadow">
+        <h2 className="font-semibold text-lg mb-2">Activity Summary</h2>
+        <ul className="text-gray-700 space-y-1">
+          <li>Journal Entries: {stats?.journalCount ?? 0}</li>
+          <li>Reflections Completed: {stats?.reflectionCount ?? 0}</li>
+          <li>Recent Mood Entries: {stats?.recentMoods?.length ?? 0}</li>
         </ul>
-      </div>
+      </section>
     </div>
   );
 }
