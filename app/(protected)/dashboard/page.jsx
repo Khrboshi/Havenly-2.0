@@ -1,63 +1,110 @@
 // app/(protected)/dashboard/page.jsx
-export const dynamic = "force-dynamic";
-
+import { supabaseServer } from "@/lib/supabase/server";
 import { getUserStats } from "@/modules/data/stats";
 import { getMoodTrend } from "@/modules/ai/actions";
 import MoodChart from "@/components/MoodChart";
+import DailyNudge from "@/components/DailyNudge";
+import PremiumNudge from "@/components/PremiumNudge";
+import Card from "@/components/ui/Card";
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
+  const supabase = await supabaseServer();
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold text-[#0D7A7E]">Dashboard</h1>
+        <p className="text-gray-600">
+          Please log in to view your dashboard.
+        </p>
+      </div>
+    );
+  }
+
+  const displayName =
+    session.user.user_metadata?.full_name ??
+    session.user.email?.split("@")[0] ??
+    "there";
+
   const stats = await getUserStats();
   const aiTrend = await getMoodTrend();
 
-  const latestScore =
-    stats?.latestMood?.score ??
-    stats?.latestMood?.mood ??
-    null;
-
   return (
-    <div className="space-y-8 p-4 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold text-[#0D7A7E]">Welcome Back</h1>
+    <div className="space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-bold text-[#0D7A7E]">
+          Welcome back, {displayName}
+        </h1>
+        <p className="text-sm text-gray-600">
+          Here is a gentle snapshot of how you have been doing lately.
+        </p>
+      </header>
 
-      <section className="bg-white p-4 rounded-xl shadow">
-        <h2 className="font-semibold text-lg mb-2">Your Latest Mood</h2>
-        {latestScore != null ? (
+      <DailyNudge message="Small, consistent check-ins with yourself make the biggest difference over time." />
+
+      {/* Latest mood */}
+      <Card>
+        <h2 className="font-semibold text-lg mb-1">Latest mood</h2>
+        {stats.latestMood ? (
           <p className="text-gray-700">
-            Latest mood:
-            <span className="ml-2 font-semibold text-[#0D7A7E]">
-              {latestScore}
+            Your most recent mood is{" "}
+            <span className="font-semibold text-[#0D7A7E]">
+              {stats.latestMood.score} / 5
             </span>
+            .
           </p>
         ) : (
-          <p className="text-gray-500">No mood entries yet.</p>
+          <p className="text-gray-500 text-sm">
+            You have not logged any moods yet. Try logging today’s mood to
+            start building your history.
+          </p>
         )}
-      </section>
+      </Card>
 
-      <section className="bg-white p-4 rounded-xl shadow">
-        <h2 className="font-semibold text-lg mb-2">Daily Streak</h2>
+      {/* Streak */}
+      <Card>
+        <h2 className="font-semibold text-lg mb-1">Daily streak</h2>
         <p className="text-gray-700">
+          You have checked in for{" "}
           <span className="font-semibold text-[#0D7A7E]">
-            {stats.streak}
+            {stats.streak ?? 0}{" "}
+            {stats.streak === 1 ? "day" : "days"}
           </span>{" "}
-          {stats.streak === 1 ? "day" : "days"} in a row.
+          in a row.
         </p>
-      </section>
+      </Card>
 
-      <section className="bg-white p-4 rounded-xl shadow space-y-4">
-        <h2 className="font-semibold text-lg">Mood Trend</h2>
-        <MoodChart moods={stats.recentMoods} />
-        <p className="text-gray-700">
-          {aiTrend?.forecast || "No trend available yet."}
+      {/* Mood trend chart */}
+      <Card>
+        <h2 className="font-semibold text-lg mb-2">Recent mood history</h2>
+        <MoodChart moods={stats.recentMoods ?? []} />
+      </Card>
+
+      {/* AI forecast */}
+      <Card>
+        <h2 className="font-semibold text-lg mb-1">Mood trend (AI)</h2>
+        <p className="text-gray-700 text-sm leading-relaxed">
+          {aiTrend?.forecast ??
+            "Once you have a few days of check-ins, Havenly will summarise your emotional trend here."}
         </p>
-      </section>
+      </Card>
 
-      <section className="bg-white p-4 rounded-xl shadow">
-        <h2 className="font-semibold text-lg mb-2">Activity Summary</h2>
-        <ul className="text-gray-700 space-y-1">
-          <li>Journal Entries: {stats.journalCount}</li>
-          <li>Reflections: {stats.reflectionCount}</li>
-          <li>Recent Moods: {stats.recentMoods.length}</li>
+      {/* Activity summary + premium nudge */}
+      <Card>
+        <h2 className="font-semibold text-lg mb-2">Activity summary</h2>
+        <ul className="text-gray-700 text-sm space-y-1">
+          <li>Journal entries: {stats.journalCount ?? 0}</li>
+          <li>Reflections completed: {stats.reflectionCount ?? 0}</li>
+          <li>Mood check-ins (last 14 days): {stats.recentMoods?.length ?? 0}</li>
         </ul>
-      </section>
+        <PremiumNudge />
+      </Card>
     </div>
   );
 }
