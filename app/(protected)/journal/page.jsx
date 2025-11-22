@@ -1,47 +1,63 @@
+"use client";
+
 export const dynamic = "force-dynamic";
 
-import { createServerSupabase } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import { useState } from "react";
+import { saveJournal } from "@/modules/journal/services";
+import { motion } from "framer-motion";
+import { fadeInUp } from "@/lib/animations";
 
-export default async function JournalPage() {
-  const supabase = await createServerSupabase();
+export default function JournalPage() {
+  const [entry, setEntry] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  async function save() {
+    if (!entry.trim()) return;
 
-  if (!session?.user) redirect("/auth/login");
+    setSaving(true);
+    setSaved(false);
+    setError("");
 
-  async function saveJournal(formData) {
-    "use server";
+    try {
+      const success = await saveJournal(entry.trim());
+      if (!success) throw new Error("Failed to save entry.");
 
-    const supabase = await createServerSupabase();
-    const entry = formData.get("entry");
-
-    await supabase.from("journal_entries").insert({
-      user_id: session.user.id,
-      entry,
-    });
+      setEntry("");
+      setSaved(true);
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-[#0D7A7E]">Daily Journal</h1>
-      <p className="text-gray-600 mb-4">Write and reflect on your thoughts.</p>
+    <motion.div variants={fadeInUp} initial="hidden" animate="show" className="space-y-6">
+      <section>
+        <h2 className="text-xl font-semibold text-[#0D7A7E]">Journal</h2>
+        <p className="text-gray-600 text-sm mt-1">Write your thoughts.</p>
+      </section>
 
-      <form action={saveJournal} className="space-y-4">
-        <textarea
-          name="entry"
-          className="w-full p-4 border rounded-lg"
-          rows={8}
-          placeholder="Write your thoughts..."
-          required
-        />
+      <textarea
+        value={entry}
+        onChange={(e) => setEntry(e.target.value)}
+        placeholder="Start writing here..."
+        rows={6}
+        className="w-full p-4 rounded-lg border border-gray-300 shadow-sm"
+      />
 
-        <button className="px-6 py-3 bg-teal-700 text-white rounded-lg">
-          Save Journal Entry
-        </button>
-      </form>
-    </div>
+      <button
+        onClick={save}
+        disabled={!entry.trim() || saving}
+        className="w-full py-3 bg-[#0D7A7E] text-white rounded-lg"
+      >
+        {saving ? "Saving…" : "Save Entry"}
+      </button>
+
+      {saved && <p className="text-green-600 text-center text-sm">Entry saved!</p>}
+      {error && <p className="text-red-600 text-center text-sm">{error}</p>}
+    </motion.div>
   );
 }
