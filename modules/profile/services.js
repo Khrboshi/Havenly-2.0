@@ -1,16 +1,13 @@
-"use server";
-
-import { createServerSupabase } from "@/lib/supabase/server";
+import { supabase } from "@/lib/supabase";
 import { logError } from "@/lib/errors";
 
 export async function getUserProfile() {
   try {
-    const supabase = await createServerSupabase();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    const { data, error } = await supabase.auth.getUser();
-    if (error) throw error;
-
-    return data?.user ?? null;
+    return user || null;
   } catch (e) {
     logError("Load profile error", e);
     return null;
@@ -19,10 +16,7 @@ export async function getUserProfile() {
 
 export async function logoutUser() {
   try {
-    const supabase = await createServerSupabase();
-    const { error } = await supabase.auth.signOut();
-
-    if (error) throw error;
+    await supabase.auth.signOut();
     return true;
   } catch (e) {
     logError("Logout error", e);
