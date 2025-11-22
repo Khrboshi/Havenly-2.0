@@ -1,133 +1,110 @@
+// modules/data/stats.js
 "use server";
 
-import { createServerSupabase } from "@/lib/supabase/server";
+import { supabaseServer } from "@/lib/supabase/server.js";
+import { logError } from "@/lib/errors";
 
 /**
- * Calculate a daily streak from mood entries
- */
-function calculateStreak(moodEntries) {
-  if (!moodEntries || moodEntries.length === 0) return 0;
-
-  const days = new Set(
-    moodEntries.map((m) => new Date(m.created_at).toDateString())
-  );
-
-  let streak = 0;
-  let current = new Date();
-
-  while (true) {
-    const dateStr = current.toDateString();
-    if (days.has(dateStr)) {
-      streak++;
-      current.setDate(current.getDate() - 1);
-    } else {
-      break;
-    }
-  }
-
-  return streak;
-}
-
-/**
- * Main stats loader
+ * Get stats for the currently authenticated user.
+ * Returns safe defaults if there is no session or an error occurs.
  */
 export async function getUserStats() {
   try {
-    const supabase = await createServerSupabase();
+    const supabase = await supabaseServer();
 
     const {
       data: { session },
       error: sessionError,
     } = await supabase.auth.getSession();
 
-    if (sessionError) {
-      console.error("Session error:", sessionError);
+    if (sessionError || !session?.user) {
       return {
         latestMood: null,
-        recentMoods: [],
+        streak: 0,
         journalCount: 0,
         reflectionCount: 0,
-        streak: 0,
-      };
-    }
-
-    if (!session) {
-      return {
-        latestMood: null,
         recentMoods: [],
-        journalCount: 0,
-        reflectionCount: 0,
-        streak: 0,
       };
     }
 
     const userId = session.user.id;
 
-    // Latest mood
-    const { data: latestMood, error: latestMoodError } = await supabase
+    // Recent moods (last 30 entries)
+    const { data: recentMoods = [], error: moodsError } = await supabase
       .from("moods")
-      .select("*")
+      .select("score, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(30);
 
-    if (latestMoodError) {
-      console.error("Latest mood error:", latestMoodError);
-    }
+    if (moodsError) throw moodsError;
 
-    // Last 14 days of moods
-    const twoWeeksAgo = new Date(Date.now() - 14 * 86400000).toISOString();
-
-    const { data: recentMoods, error: recentError } = await supabase
-      .from("moods")
-      .select("*")
-      .eq("user_id", userId)
-      .gte("created_at", twoWeeksAgo)
-      .order("created_at", { ascending: false });
-
-    if (recentError) {
-      console.error("Recent moods error:", recentError);
-    }
+    const latestMood = recentMoods[0] ?? null;
 
     // Journal count
-    const { count: journalCount, error: journalError } = await supabase
+    const { count: journalCount = 0, error: journalError } = await supabase
       .from("journal")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId);
 
-    if (journalError) {
-      console.error("Journal count error:", journalError);
-    }
+    if (journalError) throw journalError;
 
     // Reflection count
-    const { count: reflectionCount, error: reflectionError } = await supabase
-      .from("reflections")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId);
+    const { count: reflectionCount = 0, error: reflectionError } =
+      await supabase
+        .from("reflections")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId);
 
-    if (reflectionError) {
-      console.error("Reflection count error:", reflectionError);
-    }
+    if (reflectionError) throw reflectionError;
 
-    const streak = calculateStreak(recentMoods || []);
+    const streak = calculateStreakFromMoods(recentMoods);
 
     return {
-      latestMood: latestMood || null,
-      recentMoods: recentMoods || [],
-      journalCount: journalCount || 0,
-      reflectionCount: reflectionCount || 0,
+      latestMood,
       streak,
+      journalCount,
+      reflectionCount,
+      recentMoods,
     };
-  } catch (error) {
-    console.error("getUserStats error:", error);
-
+  } catch (err) {
+    logError("getUserStats failed", err);
     return {
       latestMood: null,
-      recentMoods: [],
+      streak: 0,
       journalCount: 0,
       reflectionCount: 0,
-      streak: 0,
+      recentMoods: [],
     };
   }
+}
+
+/**
+ * Very simple streak calculation:
+ * counts how many consecutive days (including today, if logged) have mood entries.
+ */
+function calculateStreakFromMoods(moods) {
+  if (!moods || moods.length === 0) return 0;
+
+  // Extract unique calendar dates (YYYY-MM-DD) from moods
+  const uniqueDates = [
+    ...new Set(
+      moods.map((m) => new Date(m.created_at).toISOString().slice(0, 10))
+    ),
+  ].sort((a, b) => (a < b ? 1 : -1)); // sort DESC (latest first)
+
+  let streak = 1;
+  for (let i = 1; i < uniqueDates.length; i++) {
+    const prev = new Date(uniqueDates[i - 1]);
+    const curr = new Date(uniqueDates[i]);
+    const diffDays = Math.round((prev - curr) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) {
+      streak += 1;
+    } else {
+      break;
+    }
+  }
+
+  return streak;
 }
